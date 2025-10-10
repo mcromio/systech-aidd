@@ -14,7 +14,7 @@
 | **Iter 3** | WikipediaTool | ✅ DONE | ✅ | 2025-10-10 |
 | **Iter 4** | LLMClient (базовый) | ✅ DONE | ✅ | 2025-10-10 |
 | **Iter 5** | Function Calling | ✅ DONE | ✅ | 2025-10-10 |
-| **Iter 6** | Telegram Bot | 🔲 TODO | 🔲 | - |
+| **Iter 6** | Telegram Bot | ✅ DONE | ✅ | 2025-10-10 |
 | **Iter 7** | Полная интеграция | 🔲 TODO | 🔲 | - |
 | **Iter 8** | Docker + финализация | 🔲 TODO | 🔲 | - |
 
@@ -157,14 +157,14 @@ assert "Пушкин" in response or "поэт" in response.lower()
 
 ### Задачи
 
-- [ ] Реализовать `src/handlers.py` (MessageHandler)
-- [ ] Методы: `handle_start`, `handle_help`, `handle_reset`, `handle_message`
-- [ ] Реализовать `src/bot.py` (TelegramBot)
-- [ ] Регистрация handlers в диспетчере
-- [ ] Реализовать `src/main.py` (точка входа)
-- [ ] Настройка логирования
-- [ ] Написать `tests/test_handlers.py`
-- [ ] Проверить: бот запускается локально
+- [x] Реализовать `src/handlers.py` (MessageHandler)
+- [x] Методы: `handle_start`, `handle_help`, `handle_reset`, `handle_message`
+- [x] Реализовать `src/bot.py` (TelegramBot)
+- [x] Регистрация handlers в диспетчере
+- [x] Реализовать `src/main.py` (точка входа)
+- [x] Настройка логирования
+- [x] Написать `tests/test_handlers.py`
+- [x] Проверить: бот запускается локально
 
 ### Критерий готовности
 ```bash

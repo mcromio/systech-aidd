@@ -19,24 +19,24 @@ dev: ## Установить зависимости для разработки
 
 run: ## Запустить бота локально
 	@echo "$(GREEN)Запуск бота...$(NC)"
-	python -m src.main
+	uv run python -m src.main
 
 test: ## Запустить тесты
 	@echo "$(GREEN)Запуск тестов...$(NC)"
-	pytest tests/ -v --cov=src --cov-report=term-missing
+	uv run pytest tests/ -v --cov=src --cov-report=term-missing
 
 test-quick: ## Быстрые тесты (без coverage)
 	@echo "$(GREEN)Быстрые тесты...$(NC)"
-	pytest tests/ -v
+	uv run pytest tests/ -v
 
 lint: ## Проверить код линтером
 	@echo "$(GREEN)Проверка кода...$(NC)"
-	ruff check src/ tests/
+	uv run ruff check src/ tests/
 
 format: ## Форматировать код
 	@echo "$(GREEN)Форматирование кода...$(NC)"
-	ruff format src/ tests/
-	ruff check --fix src/ tests/
+	uv run ruff format src/ tests/
+	uv run ruff check --fix src/ tests/
 
 clean: ## Очистить временные файлы
 	@echo "$(GREEN)Очистка...$(NC)"
