@@ -12,7 +12,7 @@
 | **Iter 1** | Базовая структура + Config | ✅ DONE | ✅ | 2025-10-10 |
 | **Iter 2** | ContextManager | ✅ DONE | ✅ | 2025-10-10 |
 | **Iter 3** | WikipediaTool | ✅ DONE | ✅ | 2025-10-10 |
-| **Iter 4** | LLMClient (базовый) | 🔲 TODO | 🔲 | - |
+| **Iter 4** | LLMClient (базовый) | ✅ DONE | ✅ | 2025-10-10 |
 | **Iter 5** | Function Calling | 🔲 TODO | 🔲 | - |
 | **Iter 6** | Telegram Bot | 🔲 TODO | 🔲 | - |
 | **Iter 7** | Полная интеграция | 🔲 TODO | 🔲 | - |
@@ -109,12 +109,12 @@ assert len(result) > 0
 
 ### Задачи
 
-- [ ] Реализовать `src/llm_client.py` (без function calling)
-- [ ] Метод `get_response` (базовая версия)
-- [ ] Инициализация `AsyncOpenAI` с прокси
-- [ ] Обработка ошибок API
-- [ ] Написать `tests/test_llm_client.py` (с моками)
-- [ ] Проверить: mock тесты проходят
+- [x] Реализовать `src/llm_client.py` (без function calling)
+- [x] Метод `get_response` (базовая версия)
+- [x] Инициализация `AsyncOpenAI` с прокси
+- [x] Обработка ошибок API
+- [x] Написать `tests/test_llm_client.py` (с моками)
+- [x] Проверить: mock тесты проходят
 
 ### Критерий готовности
 ```python
