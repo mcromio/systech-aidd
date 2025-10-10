@@ -10,7 +10,7 @@
 | Итерация | Описание | Статус | Тесты | Дата |
 |----------|----------|--------|-------|------|
 | **Iter 1** | Базовая структура + Config | ✅ DONE | ✅ | 2025-10-10 |
-| **Iter 2** | ContextManager | 🔲 TODO | 🔲 | - |
+| **Iter 2** | ContextManager | ✅ DONE | ✅ | 2025-10-10 |
 | **Iter 3** | WikipediaTool | 🔲 TODO | 🔲 | - |
 | **Iter 4** | LLMClient (базовый) | 🔲 TODO | 🔲 | - |
 | **Iter 5** | Function Calling | 🔲 TODO | 🔲 | - |
@@ -62,11 +62,11 @@ python -c "from src.config import Config; c=Config(); print(c.telegram_bot_token
 
 ### Задачи
 
-- [ ] Реализовать `src/context_manager.py`
-- [ ] Создать Pydantic модели `Message`, `UserContext`
-- [ ] Реализовать методы: `add_message`, `get_history`, `clear_history`
-- [ ] Написать `tests/test_context_manager.py`
-- [ ] Проверить: тесты проходят, coverage > 80%
+- [x] Реализовать `src/context_manager.py`
+- [x] Создать Pydantic модели `Message`, `UserContext`
+- [x] Реализовать методы: `add_message`, `get_history`, `clear_history`
+- [x] Написать `tests/test_context_manager.py`
+- [x] Проверить: тесты проходят, coverage > 80%
 
 ### Критерий готовности
 ```python
