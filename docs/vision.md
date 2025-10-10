@@ -54,8 +54,10 @@
 - Все IO операции асинхронные
 
 ### Качество кода
-- **Type hints** везде (для IDE и статического анализа)
+- **Type hints** везде (обязательно для всех аргументов и возвратов)
 - **Docstrings** на русском для всех публичных методов
+- **Логирование** только через logging (не print())
+- **Короткие методы** максимум 30-40 строк
 - **Юнит-тесты** для критичной бизнес-логики
 
 ---
@@ -1146,10 +1148,10 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 WORKDIR /app
 
 # Копирование файлов зависимостей
-COPY pyproject.toml ./
+COPY pyproject.toml uv.lock* ./
 
 # Установка зависимостей
-RUN uv pip install --system --no-cache -r pyproject.toml
+RUN uv sync --frozen --no-dev
 
 # Stage 2: Runtime
 FROM python:3.12-slim
@@ -1462,6 +1464,7 @@ systech-aidd_mcr/
 ├── Dockerfile               # Multi-stage Docker образ
 ├── docker-compose.yml       # Docker Compose конфигурация
 ├── pyproject.toml           # Конфигурация проекта и зависимостей (uv)
+├── uv.lock                  # Lock-файл зависимостей (uv)
 ├── Makefile                 # Команды для разработки
 ├── CHANGELOG.md             # История изменений
 └── README.md                # Документация для пользователей
@@ -1492,6 +1495,7 @@ systech-aidd_mcr/
 - **.env** - реальные токены и настройки (НЕ коммитится)
 - **.env.example** - шаблон без реальных токенов
 - **pyproject.toml** - зависимости, метаданные проекта, настройки инструментов
+- **uv.lock** - lock-файл зависимостей (коммитится в git)
 - **Makefile** - удобные команды для разработки
 
 #### Docker
@@ -1525,11 +1529,11 @@ help: ## Показать справку
 
 install: ## Установить зависимости
 	@echo "$(GREEN)Установка зависимостей...$(NC)"
-	uv pip install -e .
+	uv sync --no-dev
 
 dev: ## Установить зависимости для разработки
 	@echo "$(GREEN)Установка dev зависимостей...$(NC)"
-	uv pip install -e ".[dev]"
+	uv sync
 
 run: ## Запустить бота локально
 	@echo "$(GREEN)Запуск бота...$(NC)"
@@ -1588,7 +1592,9 @@ docker-rebuild: ## Пересобрать и перезапустить
 # Комплексные команды
 check: lint test ## Проверка кода и тесты
 
-setup: install dev ## Первоначальная настройка проекта
+setup: ## Первоначальная настройка проекта
+	@echo "$(GREEN)Настройка проекта...$(NC)"
+	uv sync
 	@echo "$(GREEN)Проект настроен!$(NC)"
 	@echo "Не забудьте создать .env файл на основе .env.example"
 
@@ -1600,6 +1606,7 @@ all: clean format lint test ## Полная проверка проекта
 
 ```bash
 # Первая настройка проекта
+uv sync           # Установка зависимостей
 make setup
 
 # Разработка
@@ -1741,6 +1748,7 @@ exclude_lines = [
 ⬜ Dockerfile
 ⬜ docker-compose.yml
 ⬜ pyproject.toml
+⬜ uv.lock                   # Генерируется автоматически через uv sync
 ⬜ Makefile
 ⬜ CHANGELOG.md
 ⬜ README.md
