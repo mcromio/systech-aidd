@@ -11,7 +11,7 @@
 |----------|----------|--------|-------|------|
 | **Iter 1** | Базовая структура + Config | ✅ DONE | ✅ | 2025-10-10 |
 | **Iter 2** | ContextManager | ✅ DONE | ✅ | 2025-10-10 |
-| **Iter 3** | WikipediaTool | 🔲 TODO | 🔲 | - |
+| **Iter 3** | WikipediaTool | ✅ DONE | ✅ | 2025-10-10 |
 | **Iter 4** | LLMClient (базовый) | 🔲 TODO | 🔲 | - |
 | **Iter 5** | Function Calling | 🔲 TODO | 🔲 | - |
 | **Iter 6** | Telegram Bot | 🔲 TODO | 🔲 | - |
@@ -85,11 +85,11 @@ assert len(manager.get_history(123)) == 1
 
 ### Задачи
 
-- [ ] Реализовать `src/wikipedia_tool.py`
-- [ ] Методы: `__init__`, `search`
-- [ ] Обработка ошибок (статья не найдена)
-- [ ] Написать `tests/test_wikipedia_tool.py`
-- [ ] Проверить: поиск "Python" возвращает результат
+- [x] Реализовать `src/wikipedia_tool.py`
+- [x] Методы: `__init__`, `search`
+- [x] Обработка ошибок (статья не найдена)
+- [x] Написать `tests/test_wikipedia_tool.py`
+- [x] Проверить: поиск "Python" возвращает результат
 
 ### Критерий готовности
 ```python
