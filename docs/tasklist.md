@@ -13,7 +13,7 @@
 | **Iter 2** | ContextManager | ✅ DONE | ✅ | 2025-10-10 |
 | **Iter 3** | WikipediaTool | ✅ DONE | ✅ | 2025-10-10 |
 | **Iter 4** | LLMClient (базовый) | ✅ DONE | ✅ | 2025-10-10 |
-| **Iter 5** | Function Calling | 🔲 TODO | 🔲 | - |
+| **Iter 5** | Function Calling | ✅ DONE | ✅ | 2025-10-10 |
 | **Iter 6** | Telegram Bot | 🔲 TODO | 🔲 | - |
 | **Iter 7** | Полная интеграция | 🔲 TODO | 🔲 | - |
 | **Iter 8** | Docker + финализация | 🔲 TODO | 🔲 | - |
@@ -133,12 +133,12 @@ assert response is not None
 
 ### Задачи
 
-- [ ] Добавить `_get_tools_schema()` в LLMClient
-- [ ] Добавить `_execute_tool()` в LLMClient
-- [ ] Реализовать цикл обработки tool calls (макс 5 итераций)
-- [ ] Интегрировать WikipediaTool
-- [ ] Обновить тесты с tool calls
-- [ ] Проверить: тест с Wikipedia работает
+- [x] Добавить `_get_tools_schema()` в LLMClient
+- [x] Добавить `_execute_tool()` в LLMClient
+- [x] Реализовать цикл обработки tool calls (макс 5 итераций)
+- [x] Интегрировать WikipediaTool
+- [x] Обновить тесты с tool calls
+- [x] Проверить: тест с Wikipedia работает
 
 ### Критерий готовности
 ```python
