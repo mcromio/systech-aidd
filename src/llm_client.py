@@ -141,7 +141,26 @@ class LLMClient:
                     return content
 
                 # Добавляем сообщение ассистента с tool calls
-                request_messages.append(assistant_message.model_dump())
+                # Формируем вручную, чтобы избежать лишних полей
+                tool_calls_data = [
+                    {
+                        "id": tc.id,
+                        "type": "function",
+                        "function": {
+                            "name": tc.function.name,
+                            "arguments": tc.function.arguments,
+                        },
+                    }
+                    for tc in assistant_message.tool_calls
+                ]
+
+                request_messages.append(
+                    {
+                        "role": "assistant",
+                        "content": assistant_message.content,
+                        "tool_calls": tool_calls_data,
+                    }
+                )
 
                 # Выполняем tool calls
                 for tool_call in assistant_message.tool_calls:
