@@ -1,0 +1,99 @@
+"""Тесты для конфигурации."""
+
+import pytest
+from pydantic import ValidationError
+
+from src.config import Config
+
+
+def test_config_loads_from_env(monkeypatch):
+    """Тест загрузки конфигурации из переменных окружения."""
+    # Arrange
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "123:ABC")
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    monkeypatch.setenv("OPENAI_BASE_URL", "https://api.test.com")
+
+    # Act
+    config = Config()
+
+    # Assert
+    assert config.telegram_bot_token == "123:ABC"
+    assert config.openai_api_key == "sk-test"
+    assert config.openai_base_url == "https://api.test.com"
+
+
+def test_config_default_values(monkeypatch):
+    """Тест дефолтных значений конфигурации."""
+    # Arrange
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "123:ABC")
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    monkeypatch.setenv("OPENAI_BASE_URL", "https://api.test.com")
+
+    # Act
+    config = Config()
+
+    # Assert
+    assert config.openai_model == "gpt-4o-mini"
+    assert config.max_context_messages == 10
+    assert config.log_level == "INFO"
+
+
+def test_config_custom_values(monkeypatch):
+    """Тест кастомных значений конфигурации."""
+    # Arrange
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "123:ABC")
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    monkeypatch.setenv("OPENAI_BASE_URL", "https://api.test.com")
+    monkeypatch.setenv("OPENAI_MODEL", "gpt-4")
+    monkeypatch.setenv("MAX_CONTEXT_MESSAGES", "20")
+    monkeypatch.setenv("LOG_LEVEL", "DEBUG")
+
+    # Act
+    config = Config()
+
+    # Assert
+    assert config.openai_model == "gpt-4"
+    assert config.max_context_messages == 20
+    assert config.log_level == "DEBUG"
+
+
+def test_config_validation_max_context_messages(monkeypatch):
+    """Тест валидации max_context_messages."""
+    # Arrange
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "123:ABC")
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    monkeypatch.setenv("OPENAI_BASE_URL", "https://api.test.com")
+    monkeypatch.setenv("MAX_CONTEXT_MESSAGES", "100")  # Больше 50
+
+    # Act & Assert
+    with pytest.raises(ValidationError):
+        Config()
+
+
+def test_validate_config_success(monkeypatch):
+    """Тест успешной валидации конфигурации."""
+    # Arrange
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "123:ABC")
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    monkeypatch.setenv("OPENAI_BASE_URL", "https://api.test.com")
+
+    # Act
+    config = Config()
+    config.validate_config()  # Не должно бросить исключение
+
+    # Assert - прошло без ошибок
+
+
+def test_validate_config_missing_telegram_token(monkeypatch):
+    """Тест валидации при отсутствии Telegram токена."""
+    # Arrange
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "")
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    monkeypatch.setenv("OPENAI_BASE_URL", "https://api.test.com")
+
+    # Act
+    config = Config()
+
+    # Assert
+    with pytest.raises(ValueError, match="TELEGRAM_BOT_TOKEN обязателен"):
+        config.validate_config()
