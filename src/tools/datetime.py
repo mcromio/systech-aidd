@@ -2,7 +2,7 @@
 
 import logging
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 
 import pytz
 
@@ -15,6 +15,52 @@ class DateTimeTool:
     def __init__(self) -> None:
         """Инициализация DateTimeTool."""
         logger.info("DateTimeTool инициализирован")
+
+    def get_schema(self) -> dict[str, Any]:
+        """
+        Возвращает JSON схему для OpenAI function calling.
+
+        Returns:
+            Схема функции в формате OpenAI
+        """
+        return {
+            "type": "function",
+            "function": {
+                "name": "get_current_datetime",
+                "description": "Получить текущую дату и время. Используй когда пользователь спрашивает 'какая сегодня дата', 'сколько времени', 'какой сейчас день недели' и т.п.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "timezone": {
+                            "type": "string",
+                            "description": "Часовой пояс (UTC, Europe/Moscow, America/New_York, Asia/Tokyo, etc.)",
+                            "default": "UTC",
+                        },
+                        "format_type": {
+                            "type": "string",
+                            "enum": ["full", "date", "time"],
+                            "description": "Формат: full (дата+время), date (только дата), time (только время)",
+                            "default": "full",
+                        },
+                    },
+                    "required": [],
+                },
+            },
+        }
+
+    async def execute(self, **kwargs: Any) -> str:
+        """
+        Выполняет инструмент с переданными аргументами.
+
+        Args:
+            **kwargs: timezone, format_type
+
+        Returns:
+            Текущая дата и время в указанном формате
+        """
+        timezone = kwargs.get("timezone", "UTC")
+        format_type = kwargs.get("format_type", "full")
+        return self.get_current_datetime(timezone, format_type)
 
     def get_current_datetime(
         self,
@@ -73,3 +119,4 @@ class DateTimeTool:
         except Exception as e:
             logger.error(f"Ошибка при получении даты/времени: {e}", exc_info=True)
             return f"Ошибка при получении даты/времени: {e}"
+

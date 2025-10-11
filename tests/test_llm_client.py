@@ -22,19 +22,19 @@ def config(monkeypatch):
 async def test_llm_client_init(config):
     """Тест инициализации LLMClient."""
     # Act
-    client = LLMClient(config, None)
+    client = LLMClient(config)
 
     # Assert
     assert client.config == config
-    assert client.wikipedia_tool is None
     assert client.client is not None
+    assert len(client.tools) == 3  # WikipediaTool, DateTimeTool, WebSearchTool
 
 
 @pytest.mark.asyncio
 async def test_get_response_success(config):
     """Тест успешного получения ответа от LLM."""
     # Arrange
-    client = LLMClient(config, None)
+    client = LLMClient(config, tools=[])
 
     mock_response = MagicMock()
     mock_response.choices = [MagicMock()]
@@ -170,7 +170,7 @@ async def test_get_response_includes_system_prompt(config):
 async def test_get_response_uses_correct_model(config):
     """Тест что используется правильная модель."""
     # Arrange
-    client = LLMClient(config, None)
+    client = LLMClient(config, tools=[])
 
     mock_response = MagicMock()
     mock_response.choices = [MagicMock()]
@@ -192,21 +192,18 @@ async def test_get_response_uses_correct_model(config):
         call_args = mock_create.call_args
         assert call_args.kwargs["model"] == config.openai_model
         # temperature удален для gpt-5
-        # max_completion_tokens = config.llm_max_tokens_with_tools когда есть tools
-        assert call_args.kwargs["max_completion_tokens"] == config.llm_max_tokens_with_tools
+        # max_completion_tokens = config.llm_max_tokens_no_tools когда tools=[]
+        assert call_args.kwargs["max_completion_tokens"] == config.llm_max_tokens_no_tools
 
 
 @pytest.mark.asyncio
 async def test_get_tools_schema_with_wikipedia(config):
-    """Тест генерации схемы tools с Wikipedia."""
-    from src.wikipedia_tool import WikipediaTool
-
-    wiki_tool = WikipediaTool(config)
-    client = LLMClient(config, wiki_tool)
+    """Тест генерации схемы tools с дефолтными инструментами."""
+    client = LLMClient(config)  # использует _get_default_tools()
 
     tools = client._get_tools_schema()
 
-    # Теперь 3 tools: wikipedia + datetime + websearch
+    # 3 tools по умолчанию: wikipedia + datetime + websearch
     assert len(tools) == 3
     tool_names = [t["function"]["name"] for t in tools]
     assert "search_wikipedia" in tool_names
@@ -220,26 +217,23 @@ async def test_get_tools_schema_with_wikipedia(config):
 
 
 @pytest.mark.asyncio
-async def test_get_tools_schema_without_wikipedia(config):
-    """Тест генерации схемы tools без Wikipedia."""
-    client = LLMClient(config, None)
+async def test_get_tools_schema_without_tools(config):
+    """Тест генерации схемы tools без инструментов."""
+    client = LLMClient(config, tools=[])
 
     tools = client._get_tools_schema()
 
-    # Теперь всегда есть datetime и websearch tools
-    assert len(tools) == 2
-    tool_names = [t["function"]["name"] for t in tools]
-    assert "get_current_datetime" in tool_names
-    assert "web_search" in tool_names
+    # Нет инструментов
+    assert len(tools) == 0
 
 
 @pytest.mark.asyncio
 async def test_execute_tool_wikipedia(config):
     """Тест выполнения Wikipedia tool."""
-    from src.wikipedia_tool import WikipediaTool
+    from src.tools import WikipediaTool
 
     wiki_tool = WikipediaTool(config)
-    client = LLMClient(config, wiki_tool)
+    client = LLMClient(config, tools=[wiki_tool])
 
     result = await client._execute_tool("search_wikipedia", {"query": "Python", "language": "en"})
 
@@ -250,7 +244,7 @@ async def test_execute_tool_wikipedia(config):
 @pytest.mark.asyncio
 async def test_execute_tool_unknown(config):
     """Тест вызова несуществующего tool."""
-    client = LLMClient(config, None)
+    client = LLMClient(config, tools=[])
 
     result = await client._execute_tool("unknown_tool", {})
 
@@ -260,10 +254,10 @@ async def test_execute_tool_unknown(config):
 @pytest.mark.asyncio
 async def test_get_response_with_tool_calls(config):
     """Тест обработки tool calls."""
-    from src.wikipedia_tool import WikipediaTool
+    from src.tools import WikipediaTool
 
     wiki_tool = WikipediaTool(config)
-    client = LLMClient(config, wiki_tool)
+    client = LLMClient(config, tools=[wiki_tool])
 
     # Mock первого ответа с tool call
     mock_tool_call = MagicMock()

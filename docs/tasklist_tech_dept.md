@@ -13,7 +13,7 @@
 | **TechDebt-1** | Исправление падающих тестов | ✅ DONE | ✅ | 2025-10-11 |
 | **TechDebt-2** | Добавление mypy + type checking | ✅ DONE | ✅ | 2025-10-11 |
 | **TechDebt-3** | Устранение magic numbers (DRY) | ✅ DONE | ✅ | 2025-10-11 |
-| **TechDebt-4** | Рефакторинг Tools → Protocol | 🔲 TODO | 🔲 | - |
+| **TechDebt-4** | Рефакторинг Tools → Protocol | ✅ DONE | ✅ | 2025-10-11 |
 | **TechDebt-5** | Разделение LLMClient (SOLID) | 🔲 TODO | 🔲 | - |
 | **TechDebt-6** | Повышение coverage до 85%+ | 🔲 TODO | 🔲 | - |
 
@@ -285,9 +285,9 @@ def _get_tools_schema(self):
 
 ### Задачи
 
-- [ ] Создать `src/tools/__init__.py`
+- [x] Создать `src/tools/__init__.py`
 
-- [ ] Создать `src/tools/base.py` с Protocol:
+- [x] Создать `src/tools/base.py` с Protocol:
   ```python
   from typing import Protocol, runtime_checkable
   
@@ -304,7 +304,7 @@ def _get_tools_schema(self):
           ...
   ```
 
-- [ ] Обновить существующие tools:
+- [x] Обновить существующие tools:
   - `src/tools/wikipedia.py` (переименовать из `wikipedia_tool.py`)
   - `src/tools/datetime.py` (переименовать из `datetime_tool.py`)
   - `src/tools/websearch.py` (переименовать из `websearch_tool.py`)
@@ -322,7 +322,7 @@ def _get_tools_schema(self):
           return await self.search(query, language)
   ```
 
-- [ ] Упростить `src/llm_client.py`:
+- [x] Упростить `src/llm_client.py`:
   ```python
   def __init__(self, config: Config, tools: list[Tool] | None = None):
       self.config = config
@@ -345,7 +345,7 @@ def _get_tools_schema(self):
       return f"Ошибка: инструмент '{tool_name}' не найден"
   ```
 
-- [ ] Обновить `src/main.py`:
+- [x] Обновить `src/main.py`:
   ```python
   from src.tools import WikipediaTool, DateTimeTool, WebSearchTool
   
@@ -353,9 +353,9 @@ def _get_tools_schema(self):
   llm_client = LLMClient(config, tools=tools)
   ```
 
-- [ ] Обновить все импорты
+- [x] Обновить все импорты
 
-- [ ] Обновить тесты
+- [x] Обновить тесты
 
 ### Критерий готовности
 

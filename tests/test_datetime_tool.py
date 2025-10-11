@@ -1,6 +1,6 @@
 """Тесты для DateTimeTool."""
 
-from src.datetime_tool import DateTimeTool
+from src.tools import DateTimeTool
 
 
 def test_datetime_tool_init():

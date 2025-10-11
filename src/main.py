@@ -9,7 +9,6 @@ from src.config import Config
 from src.context_manager import ContextManager
 from src.handlers import MessageHandler
 from src.llm_client import LLMClient
-from src.wikipedia_tool import WikipediaTool
 
 logger = logging.getLogger(__name__)
 
@@ -53,8 +52,7 @@ async def main() -> None:
 
     # 3. Создание компонентов
     context_manager = ContextManager(config)
-    wikipedia_tool = WikipediaTool(config)
-    llm_client = LLMClient(config, wikipedia_tool)
+    llm_client = LLMClient(config)  # tools создаются автоматически
     message_handler = MessageHandler(config, context_manager, llm_client)
 
     # 4. Запуск бота

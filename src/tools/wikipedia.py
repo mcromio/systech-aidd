@@ -1,6 +1,7 @@
 """Инструмент для поиска информации в Wikipedia."""
 
 import logging
+from typing import Any
 
 import wikipediaapi
 
@@ -31,6 +32,51 @@ class WikipediaTool:
             user_agent=user_agent,
         )
         logger.info("WikipediaTool инициализирован")
+
+    def get_schema(self) -> dict[str, Any]:
+        """
+        Возвращает JSON схему для OpenAI function calling.
+
+        Returns:
+            Схема функции в формате OpenAI
+        """
+        return {
+            "type": "function",
+            "function": {
+                "name": "search_wikipedia",
+                "description": "Поиск информации в Wikipedia (русская и английская версии). Используй для статичной энциклопедической информации.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "Поисковый запрос (название статьи или ключевые слова)",
+                        },
+                        "language": {
+                            "type": "string",
+                            "enum": ["ru", "en"],
+                            "description": "Язык Wikipedia (ru - русский, en - английский)",
+                            "default": "ru",
+                        },
+                    },
+                    "required": ["query"],
+                },
+            },
+        }
+
+    async def execute(self, **kwargs: Any) -> str:
+        """
+        Выполняет инструмент с переданными аргументами.
+
+        Args:
+            **kwargs: query, language
+
+        Returns:
+            Результат поиска в Wikipedia
+        """
+        query = kwargs.get("query", "")
+        language = kwargs.get("language", "ru")
+        return await self.search(query, language)
 
     async def search(self, query: str, language: str = "ru") -> str:
         """
@@ -67,3 +113,4 @@ class WikipediaTool:
         except Exception as e:
             logger.error(f"Ошибка поиска в Wikipedia: {e}")
             return f"Ошибка при поиске в Wikipedia: {str(e)}"
+

@@ -3,7 +3,7 @@
 import pytest
 
 from src.config import Config
-from src.wikipedia_tool import WikipediaTool
+from src.tools import WikipediaTool
 
 
 @pytest.fixture

@@ -9,8 +9,7 @@ from openai import AsyncOpenAI
 
 from src.config import Config
 from src.context_manager import Message
-from src.datetime_tool import DateTimeTool
-from src.websearch_tool import WebSearchTool
+from src.tools import DateTimeTool, Tool, WebSearchTool, WikipediaTool
 
 logger = logging.getLogger(__name__)
 
@@ -21,23 +20,17 @@ class LLMClient:
     def __init__(
         self,
         config: Config,
-        wikipedia_tool: Any = None,
-        datetime_tool: DateTimeTool | None = None,
-        websearch_tool: Any = None,
+        tools: list[Tool] | None = None,
     ) -> None:
         """
         Инициализация LLM клиента.
 
         Args:
             config: Конфигурация приложения
-            wikipedia_tool: Wikipedia tool для function calling
-            datetime_tool: DateTimeTool для получения текущей даты/времени
-            websearch_tool: WebSearchTool для поиска актуальной информации
+            tools: Список инструментов для function calling (опционально)
         """
         self.config = config
-        self.wikipedia_tool = wikipedia_tool
-        self.datetime_tool = datetime_tool or DateTimeTool()
-        self.websearch_tool = websearch_tool or WebSearchTool(config)
+        self.tools = tools if tools is not None else self._get_default_tools()
 
         # Создаем HTTP клиент с прокси
         http_client = httpx.AsyncClient(
@@ -51,8 +44,21 @@ class LLMClient:
         )
         logger.info(
             f"LLMClient инициализирован с моделью {config.openai_model} "
-            f"через прокси {config.openai_proxy_url}"
+            f"через прокси {config.openai_proxy_url}, tools: {len(self.tools)}"
         )
+
+    def _get_default_tools(self) -> list[Tool]:
+        """
+        Создает набор инструментов по умолчанию.
+
+        Returns:
+            Список стандартных инструментов
+        """
+        return [
+            WikipediaTool(self.config),
+            DateTimeTool(),
+            WebSearchTool(self.config),
+        ]
 
     def _get_tools_schema(self) -> list[dict[str, Any]]:
         """
@@ -61,95 +67,7 @@ class LLMClient:
         Returns:
             Список схем инструментов в формате OpenAI
         """
-        tools: list[dict[str, Any]] = []
-
-        # Wikipedia search
-        if self.wikipedia_tool:
-            tools.append(
-                {
-                    "type": "function",
-                    "function": {
-                        "name": "search_wikipedia",
-                        "description": "Поиск информации в Wikipedia (русская и английская версии). Используй для статичной энциклопедической информации.",
-                        "parameters": {
-                            "type": "object",
-                            "properties": {
-                                "query": {
-                                    "type": "string",
-                                    "description": "Поисковый запрос (название статьи или ключевые слова)",
-                                },
-                                "language": {
-                                    "type": "string",
-                                    "enum": ["ru", "en"],
-                                    "description": "Язык Wikipedia (ru - русский, en - английский)",
-                                    "default": "ru",
-                                },
-                            },
-                            "required": ["query"],
-                        },
-                    },
-                }
-            )
-
-        # Current date/time
-        if self.datetime_tool:
-            tools.append(
-                {
-                    "type": "function",
-                    "function": {
-                        "name": "get_current_datetime",
-                        "description": "Получить текущую дату и время. Используй когда пользователь спрашивает 'какая сегодня дата', 'сколько времени', 'какой сейчас день недели' и т.п.",
-                        "parameters": {
-                            "type": "object",
-                            "properties": {
-                                "timezone": {
-                                    "type": "string",
-                                    "description": "Часовой пояс (UTC, Europe/Moscow, America/New_York, Asia/Tokyo, etc.)",
-                                    "default": "UTC",
-                                },
-                                "format_type": {
-                                    "type": "string",
-                                    "enum": ["full", "date", "time"],
-                                    "description": "Формат: full (дата+время), date (только дата), time (только время)",
-                                    "default": "full",
-                                },
-                            },
-                            "required": [],
-                        },
-                    },
-                }
-            )
-
-        # Web search for current information
-        if self.websearch_tool:
-            tools.append(
-                {
-                    "type": "function",
-                    "function": {
-                        "name": "web_search",
-                        "description": "Поиск АКТУАЛЬНОЙ информации в интернете через DuckDuckGo. Используй для вопросов о текущих событиях, политиках, новостях, ценах, погоде и т.д. НЕ используй для общеизвестных фактов из Wikipedia.",
-                        "parameters": {
-                            "type": "object",
-                            "properties": {
-                                "query": {
-                                    "type": "string",
-                                    "description": "Поисковый запрос (на русском или английском)",
-                                },
-                                "max_results": {
-                                    "type": "integer",
-                                    "description": "Максимальное количество результатов (1-5)",
-                                    "default": 3,
-                                    "minimum": 1,
-                                    "maximum": 5,
-                                },
-                            },
-                            "required": ["query"],
-                        },
-                    },
-                }
-            )
-
-        return tools
+        return [tool.get_schema() for tool in self.tools]
 
     async def _execute_tool(self, tool_name: str, arguments: dict[str, Any]) -> str:
         """
@@ -164,23 +82,12 @@ class LLMClient:
         """
         logger.info(f"Выполнение tool: {tool_name} с аргументами {arguments}")
 
-        if tool_name == "search_wikipedia":
-            query = arguments.get("query", "")
-            language = arguments.get("language", "ru")
-            result = await self.wikipedia_tool.search(query, language)
-            return str(result)
-
-        elif tool_name == "get_current_datetime":
-            timezone = arguments.get("timezone", "UTC")
-            format_type = arguments.get("format_type", "full")
-            result = self.datetime_tool.get_current_datetime(timezone, format_type)
-            return str(result)
-
-        elif tool_name == "web_search":
-            query = arguments.get("query", "")
-            max_results = arguments.get("max_results", 3)
-            result = await self.websearch_tool.search(query, max_results)
-            return str(result)
+        # Ищем инструмент по имени в схеме
+        for tool in self.tools:
+            schema = tool.get_schema()
+            if schema["function"]["name"] == tool_name:
+                result = await tool.execute(**arguments)
+                return str(result)
 
         logger.warning(f"Неизвестный tool: {tool_name}")
         return f"Ошибка: инструмент '{tool_name}' не найден"

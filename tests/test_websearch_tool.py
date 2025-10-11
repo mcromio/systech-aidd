@@ -3,7 +3,7 @@
 import pytest
 
 from src.config import Config
-from src.websearch_tool import WebSearchTool
+from src.tools import WebSearchTool
 
 
 @pytest.fixture

@@ -1,6 +1,7 @@
 """Инструмент для поиска актуальной информации в интернете."""
 
 import logging
+from typing import Any
 
 from duckduckgo_search import DDGS
 
@@ -22,6 +23,52 @@ class WebSearchTool:
         self.config = config
         self.ddgs = DDGS()
         logger.info("WebSearchTool инициализирован")
+
+    def get_schema(self) -> dict[str, Any]:
+        """
+        Возвращает JSON схему для OpenAI function calling.
+
+        Returns:
+            Схема функции в формате OpenAI
+        """
+        return {
+            "type": "function",
+            "function": {
+                "name": "web_search",
+                "description": "Поиск АКТУАЛЬНОЙ информации в интернете через DuckDuckGo. Используй для вопросов о текущих событиях, политиках, новостях, ценах, погоде и т.д. НЕ используй для общеизвестных фактов из Wikipedia.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "Поисковый запрос (на русском или английском)",
+                        },
+                        "max_results": {
+                            "type": "integer",
+                            "description": f"Максимальное количество результатов (1-{self.config.websearch_max_results})",
+                            "default": self.config.websearch_default_results,
+                            "minimum": 1,
+                            "maximum": self.config.websearch_max_results,
+                        },
+                    },
+                    "required": ["query"],
+                },
+            },
+        }
+
+    async def execute(self, **kwargs: Any) -> str:
+        """
+        Выполняет инструмент с переданными аргументами.
+
+        Args:
+            **kwargs: query, max_results
+
+        Returns:
+            Результаты поиска
+        """
+        query = kwargs.get("query", "")
+        max_results = kwargs.get("max_results")
+        return await self.search(query, max_results)
 
     async def search(self, query: str, max_results: int | None = None) -> str:
         """
@@ -93,3 +140,4 @@ class WebSearchTool:
         except Exception as e:
             logger.error(f"Ошибка в WebSearchTool: {e}", exc_info=True)
             return f"Ошибка при поиске информации: {e}"
+
