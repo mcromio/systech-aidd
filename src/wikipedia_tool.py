@@ -4,19 +4,24 @@ import logging
 
 import wikipediaapi
 
+from src.config import Config
+
 logger = logging.getLogger(__name__)
 
 
 class WikipediaTool:
     """Инструмент для поиска в Wikipedia."""
 
-    def __init__(self, user_agent: str = "LLM-Assistant-Bot/1.0"):
+    def __init__(self, config: Config) -> None:
         """
         Инициализация Wikipedia клиента.
 
         Args:
-            user_agent: User agent для запросов к Wikipedia API
+            config: Конфигурация приложения
         """
+        self.config = config
+        user_agent = config.wikipedia_user_agent
+
         self.wiki_ru = wikipediaapi.Wikipedia(
             language="ru",
             user_agent=user_agent,
@@ -48,10 +53,11 @@ class WikipediaTool:
                 logger.warning(f"Статья не найдена: {query}")
                 return f"Статья '{query}' не найдена в Wikipedia ({language})."
 
-            # Возвращаем summary (первый абзац), макс 500 символов
-            summary = page.summary[:500]
+            # Возвращаем summary (первый абзац)
+            max_length = self.config.wikipedia_max_summary_length
+            summary = page.summary[:max_length]
 
-            if len(page.summary) > 500:
+            if len(page.summary) > max_length:
                 summary += "..."
 
             result = f"{summary}\n\nИсточник: {page.fullurl}"

@@ -32,6 +32,60 @@ class Config(BaseSettings):
         description="Таймаут для запросов к OpenAI (секунды)",
     )
 
+    # LLM параметры
+    llm_max_tool_iterations: int = Field(
+        default=10,
+        ge=1,
+        le=20,
+        description="Максимум итераций tool calls",
+    )
+    llm_max_websearch_calls: int = Field(
+        default=2,
+        ge=1,
+        le=5,
+        description="Максимум веб-запросов за диалог",
+    )
+    llm_max_tokens_with_tools: int = Field(
+        default=10000,
+        ge=1000,
+        description="Максимум токенов ответа с tools",
+    )
+    llm_max_tokens_no_tools: int = Field(
+        default=12000,
+        ge=1000,
+        description="Максимум токенов ответа без tools",
+    )
+
+    # WebSearch параметры
+    websearch_default_results: int = Field(
+        default=3,
+        ge=1,
+        le=10,
+        description="Дефолтное количество результатов поиска",
+    )
+    websearch_max_results: int = Field(
+        default=5,
+        ge=1,
+        le=10,
+        description="Максимум результатов поиска",
+    )
+    websearch_max_body_length: int = Field(
+        default=200,
+        ge=50,
+        description="Максимальная длина описания результата",
+    )
+
+    # Wikipedia параметры
+    wikipedia_max_summary_length: int = Field(
+        default=500,
+        ge=100,
+        description="Максимальная длина summary",
+    )
+    wikipedia_user_agent: str = Field(
+        default="LLM-Assistant-Bot/1.0",
+        description="User agent для Wikipedia API",
+    )
+
     # Поведение
     system_prompt: str = Field(
         default=(

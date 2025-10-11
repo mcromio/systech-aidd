@@ -192,8 +192,8 @@ async def test_get_response_uses_correct_model(config):
         call_args = mock_create.call_args
         assert call_args.kwargs["model"] == config.openai_model
         # temperature удален для gpt-5
-        # max_completion_tokens = 10000 когда есть tools (datetime + websearch)
-        assert call_args.kwargs["max_completion_tokens"] == 10000
+        # max_completion_tokens = config.llm_max_tokens_with_tools когда есть tools
+        assert call_args.kwargs["max_completion_tokens"] == config.llm_max_tokens_with_tools
 
 
 @pytest.mark.asyncio
@@ -201,7 +201,7 @@ async def test_get_tools_schema_with_wikipedia(config):
     """Тест генерации схемы tools с Wikipedia."""
     from src.wikipedia_tool import WikipediaTool
 
-    wiki_tool = WikipediaTool()
+    wiki_tool = WikipediaTool(config)
     client = LLMClient(config, wiki_tool)
 
     tools = client._get_tools_schema()
@@ -238,7 +238,7 @@ async def test_execute_tool_wikipedia(config):
     """Тест выполнения Wikipedia tool."""
     from src.wikipedia_tool import WikipediaTool
 
-    wiki_tool = WikipediaTool()
+    wiki_tool = WikipediaTool(config)
     client = LLMClient(config, wiki_tool)
 
     result = await client._execute_tool("search_wikipedia", {"query": "Python", "language": "en"})
@@ -262,7 +262,7 @@ async def test_get_response_with_tool_calls(config):
     """Тест обработки tool calls."""
     from src.wikipedia_tool import WikipediaTool
 
-    wiki_tool = WikipediaTool()
+    wiki_tool = WikipediaTool(config)
     client = LLMClient(config, wiki_tool)
 
     # Mock первого ответа с tool call

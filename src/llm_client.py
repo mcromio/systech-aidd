@@ -37,7 +37,7 @@ class LLMClient:
         self.config = config
         self.wikipedia_tool = wikipedia_tool
         self.datetime_tool = datetime_tool or DateTimeTool()
-        self.websearch_tool = websearch_tool or WebSearchTool()
+        self.websearch_tool = websearch_tool or WebSearchTool(config)
 
         # Создаем HTTP клиент с прокси
         http_client = httpx.AsyncClient(
@@ -207,10 +207,10 @@ class LLMClient:
 
             # Счетчик веб-запросов (максимум 2)
             websearch_count = 0
-            max_websearch = 2
+            max_websearch = self.config.llm_max_websearch_calls
 
-            # Цикл обработки tool calls (максимум 10 итераций)
-            for iteration in range(10):
+            # Цикл обработки tool calls
+            for iteration in range(self.config.llm_max_tool_iterations):
                 logger.debug(
                     f"Запрос к LLM (итерация {iteration + 1}): {len(request_messages)} сообщений"
                 )
@@ -222,13 +222,13 @@ class LLMClient:
                         model=self.config.openai_model,
                         messages=request_messages,  # type: ignore[arg-type]
                         tools=tools,  # type: ignore[arg-type]
-                        max_completion_tokens=10000,
+                        max_completion_tokens=self.config.llm_max_tokens_with_tools,
                     )
                 else:
                     response = await self.client.chat.completions.create(
                         model=self.config.openai_model,
                         messages=request_messages,  # type: ignore[arg-type]
-                        max_completion_tokens=12000,
+                        max_completion_tokens=self.config.llm_max_tokens_no_tools,
                     )
 
                 assistant_message = response.choices[0].message
@@ -296,7 +296,9 @@ class LLMClient:
                     )
 
             # Если достигли лимита итераций
-            logger.warning("Достигнут лимит итераций tool calls (10)")
+            logger.warning(
+                f"Достигнут лимит итераций tool calls ({self.config.llm_max_tool_iterations})"
+            )
             return "Извините, не удалось получить ответ (превышен лимит запросов). Попробуйте задать более конкретный вопрос."
 
         except Exception as e:

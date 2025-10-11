@@ -4,35 +4,47 @@ import logging
 
 from duckduckgo_search import DDGS
 
+from src.config import Config
+
 logger = logging.getLogger(__name__)
 
 
 class WebSearchTool:
     """Инструмент для поиска актуальной информации через DuckDuckGo."""
 
-    def __init__(self) -> None:
-        """Инициализация WebSearchTool."""
+    def __init__(self, config: Config) -> None:
+        """
+        Инициализация WebSearchTool.
+
+        Args:
+            config: Конфигурация приложения
+        """
+        self.config = config
         self.ddgs = DDGS()
         logger.info("WebSearchTool инициализирован")
 
-    async def search(self, query: str, max_results: int = 3) -> str:
+    async def search(self, query: str, max_results: int | None = None) -> str:
         """
         Поиск актуальной информации в интернете.
 
         Args:
             query: Поисковый запрос
-            max_results: Максимальное количество результатов (1-5)
+            max_results: Максимальное количество результатов (опционально)
 
         Returns:
             Структурированные результаты поиска с заголовками, описаниями и ссылками
 
         Examples:
-            >>> tool = WebSearchTool()
+            >>> tool = WebSearchTool(config)
             >>> result = await tool.search("президент Зимбабве 2025", max_results=2)
         """
         try:
+            # Используем дефолтное значение из config если не передано
+            if max_results is None:
+                max_results = self.config.websearch_default_results
+
             # Ограничиваем количество результатов
-            max_results = max(1, min(max_results, 5))
+            max_results = max(1, min(max_results, self.config.websearch_max_results))
 
             logger.info(f"Поиск в DuckDuckGo: '{query}' (max_results={max_results})")
 
@@ -51,8 +63,9 @@ class WebSearchTool:
                     results.append(f"{idx}. **{title}**")
                     if body:
                         # Обрезаем описание если слишком длинное
-                        if len(body) > 200:
-                            body = body[:197] + "..."
+                        max_length = self.config.websearch_max_body_length
+                        if len(body) > max_length:
+                            body = body[: max_length - 3] + "..."
                         results.append(f"   {body}")
                     if href:
                         results.append(f"   🔗 {href}")

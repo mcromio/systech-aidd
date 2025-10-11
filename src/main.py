@@ -53,7 +53,7 @@ async def main() -> None:
 
     # 3. Создание компонентов
     context_manager = ContextManager(config)
-    wikipedia_tool = WikipediaTool()
+    wikipedia_tool = WikipediaTool(config)
     llm_client = LLMClient(config, wikipedia_tool)
     message_handler = MessageHandler(config, context_manager, llm_client)
 

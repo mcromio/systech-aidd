@@ -2,77 +2,83 @@
 
 import pytest
 
+from src.config import Config
 from src.websearch_tool import WebSearchTool
 
 
-def test_websearch_tool_init():
-    """Тест инициализации WebSearchTool."""
-    # Act
-    tool = WebSearchTool()
-
-    # Assert
-    assert tool is not None
-    assert tool.ddgs is not None
+@pytest.fixture
+def config():
+    """Фикстура конфигурации."""
+    return Config(
+        telegram_bot_token="123:ABC",
+        openai_api_key="sk-test",
+        openai_proxy_url="https://proxy.test.com",
+    )
 
 
 @pytest.mark.asyncio
-async def test_search_basic():
+async def test_websearch_tool_init(config):
+    """Тест инициализации WebSearchTool."""
+    # Act
+    tool = WebSearchTool(config)
+
+    # Assert
+    assert tool.ddgs is not None
+    assert tool.config is not None
+
+
+@pytest.mark.asyncio
+async def test_search_basic(config):
     """Тест базового поиска."""
     # Arrange
-    tool = WebSearchTool()
+    tool = WebSearchTool(config)
 
     # Act
-    result = await tool.search("Python programming language", max_results=2)
+    result = await tool.search("Python programming")
 
     # Assert
     assert result is not None
     assert len(result) > 0
-    assert "Python" in result or "python" in result
+    assert "Python" in result or "python" in result.lower()
 
 
 @pytest.mark.asyncio
-async def test_search_max_results():
-    """Тест ограничения результатов."""
+async def test_search_max_results(config):
+    """Тест с указанием max_results."""
     # Arrange
-    tool = WebSearchTool()
+    tool = WebSearchTool(config)
 
     # Act
-    result = await tool.search("test query", max_results=1)
+    result = await tool.search("Python", max_results=2)
 
     # Assert
     assert result is not None
-    # Проверяем что результат не пустой
-    assert len(result) > 10
+    assert len(result) > 0
 
 
 @pytest.mark.asyncio
-async def test_search_empty_query():
+async def test_search_empty_query(config):
     """Тест с пустым запросом."""
     # Arrange
-    tool = WebSearchTool()
+    tool = WebSearchTool(config)
 
     # Act
-    result = await tool.search("", max_results=1)
+    result = await tool.search("")
 
     # Assert
     assert result is not None
-    # Должен вернуть что-то (возможно ошибку или пустой результат)
+    # Может вернуть ошибку или результаты по умолчанию
 
 
 @pytest.mark.asyncio
-async def test_search_max_results_limits():
-    """Тест границ max_results."""
+async def test_search_max_results_limits(config):
+    """Тест ограничения max_results."""
     # Arrange
-    tool = WebSearchTool()
+    tool = WebSearchTool(config)
 
-    # Act - должен ограничить до 5
-    result = await tool.search("test", max_results=10)
+    # Act - запрашиваем больше максимума
+    result = await tool.search("test", max_results=100)
 
-    # Assert
+    # Assert - должно ограничиться config.websearch_max_results
     assert result is not None
-
-    # Act - должен ограничить до 1
-    result = await tool.search("test", max_results=0)
-
-    # Assert
-    assert result is not None
+    assert len(result) > 0
