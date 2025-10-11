@@ -23,7 +23,9 @@ class UserContext(BaseModel):
     user_id: int
     messages: list[Message] = []
 
-    def add_message(self, role: str, content: str) -> None:
+    def add_message(
+        self, role: Literal["user", "assistant", "system"], content: str
+    ) -> None:
         """Добавить сообщение в историю."""
         self.messages.append(Message(role=role, content=content))
 
@@ -50,13 +52,15 @@ class ContextManager:
         self.contexts: dict[int, UserContext] = {}
         logger.info("ContextManager инициализирован")
 
-    def add_message(self, user_id: int, role: str, content: str) -> None:
+    def add_message(
+        self, user_id: int, role: Literal["user", "assistant", "system"], content: str
+    ) -> None:
         """
         Добавить сообщение в историю пользователя.
 
         Args:
             user_id: ID пользователя Telegram
-            role: Роль отправителя (user/assistant)
+            role: Роль отправителя (user/assistant/system)
             content: Содержимое сообщения
         """
         if user_id not in self.contexts:

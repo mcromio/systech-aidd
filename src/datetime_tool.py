@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 class DateTimeTool:
     """Инструмент для получения текущей даты и времени."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Инициализация DateTimeTool."""
         logger.info("DateTimeTool инициализирован")
 

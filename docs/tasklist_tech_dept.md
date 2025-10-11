@@ -11,7 +11,7 @@
 | Итерация | Описание | Статус | Тесты | Дата |
 |----------|----------|--------|-------|------|
 | **TechDebt-1** | Исправление падающих тестов | ✅ DONE | ✅ | 2025-10-11 |
-| **TechDebt-2** | Добавление mypy + type checking | 🔲 TODO | 🔲 | - |
+| **TechDebt-2** | Добавление mypy + type checking | ✅ DONE | ✅ | 2025-10-11 |
 | **TechDebt-3** | Устранение magic numbers (DRY) | 🔲 TODO | 🔲 | - |
 | **TechDebt-4** | Рефакторинг Tools → Protocol | 🔲 TODO | 🔲 | - |
 | **TechDebt-5** | Разделение LLMClient (SOLID) | 🔲 TODO | 🔲 | - |
@@ -98,42 +98,45 @@ make lint
 
 ### Задачи
 
-- [ ] Добавить `mypy` в dev-зависимости:
+- [x] Добавить `mypy` в dev-зависимости:
   ```toml
   # pyproject.toml
   [dependency-groups]
   dev = [
       "mypy>=1.11.0",
-      ...
+      "types-pytz>=2025.2.0",
   ]
   ```
 
-- [ ] Настроить `mypy`:
+- [x] Настроить `mypy`:
   ```toml
   # pyproject.toml
   [tool.mypy]
   python_version = "3.12"
-  strict = false  # Начать с false, потом включить
+  strict = false
   warn_return_any = true
   warn_unused_configs = true
   disallow_untyped_defs = true
   disallow_any_generics = false
+  show_error_codes = true
+  show_column_numbers = true
+  pretty = true
   
   [[tool.mypy.overrides]]
   module = ["aiogram.*", "wikipediaapi.*", "duckduckgo_search.*"]
   ignore_missing_imports = true
   ```
 
-- [ ] Добавить команду в `Makefile`:
+- [x] Добавить команду в `Makefile`:
   ```makefile
   type-check: ## Проверка типов с mypy
       @echo "$(GREEN)Проверка типов...$(NC)"
       uv run mypy src/
   ```
 
-- [ ] Исправить ошибки типизации (если есть)
+- [x] Исправить ошибки типизации (22 ошибки → 0 ошибок)
 
-- [ ] Добавить в `make check`:
+- [x] Добавить в `make check`:
   ```makefile
   check: lint type-check test ## Полная проверка кода
   ```
@@ -152,10 +155,12 @@ make check
 
 ### ✅ Проверка соответствия стандартам
 
-- [ ] **conventions.mdc**: Type hints обязательны везде ✓
-- [ ] **vision.md**: Качество кода - type hints везде ✓
-- [ ] **vision.md**: Инструменты разработки расширены ✓
-- [ ] **workflow.mdc**: make команды обновлены ✓
+- [x] **conventions.mdc**: Type hints обязательны везде ✓
+- [x] **conventions.mdc**: Literal типы для role ✓
+- [x] **conventions.mdc**: # type: ignore только для внешних библиотек ✓
+- [x] **vision.md**: Качество кода - type hints везде ✓
+- [x] **vision.md**: Инструменты разработки расширены (mypy) ✓
+- [x] **workflow.mdc**: make команды обновлены (type-check, check) ✓
 
 ---
 

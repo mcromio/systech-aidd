@@ -33,6 +33,10 @@ lint: ## Проверить код линтером
 	@echo "$(GREEN)Проверка кода...$(NC)"
 	uv run ruff check src/ tests/
 
+type-check: ## Проверка типов с mypy
+	@echo "$(GREEN)Проверка типов...$(NC)"
+	uv run mypy src/
+
 format: ## Форматировать код
 	@echo "$(GREEN)Форматирование кода...$(NC)"
 	uv run ruff format src/ tests/
@@ -53,8 +57,8 @@ setup: ## Первоначальная настройка проекта
 	@echo "$(GREEN)Проект настроен!$(NC)"
 	@echo "Не забудьте создать .env файл на основе .env.example"
 
-check: lint test ## Проверка кода и тесты
+check: lint type-check test ## Проверка кода, типов и тесты
 
-all: clean format lint test ## Полная проверка проекта
+all: clean format lint type-check test ## Полная проверка проекта
 	@echo "$(GREEN)Все проверки пройдены!$(NC)"
 

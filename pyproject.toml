@@ -26,6 +26,8 @@ dev = [
     "pytest-asyncio>=0.24.0",
     "pytest-cov>=5.0.0",
     "ruff>=0.6.0",
+    "mypy>=1.11.0",
+    "types-pytz>=2025.2.0",
 ]
 
 [build-system]
@@ -75,4 +77,19 @@ exclude_lines = [
     "raise NotImplementedError",
     "if __name__ == .__main__.:",
 ]
+
+[tool.mypy]
+python_version = "3.12"
+strict = false
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_any_generics = false
+show_error_codes = true
+show_column_numbers = true
+pretty = true
+
+[[tool.mypy.overrides]]
+module = ["aiogram.*", "wikipediaapi.*", "duckduckgo_search.*"]
+ignore_missing_imports = true
 

@@ -2,6 +2,7 @@
 
 import json
 import logging
+from typing import Any
 
 import httpx
 from openai import AsyncOpenAI
@@ -20,10 +21,10 @@ class LLMClient:
     def __init__(
         self,
         config: Config,
-        wikipedia_tool=None,
-        datetime_tool=None,
-        websearch_tool=None,
-    ):
+        wikipedia_tool: Any = None,
+        datetime_tool: DateTimeTool | None = None,
+        websearch_tool: Any = None,
+    ) -> None:
         """
         Инициализация LLM клиента.
 
@@ -53,14 +54,14 @@ class LLMClient:
             f"через прокси {config.openai_proxy_url}"
         )
 
-    def _get_tools_schema(self) -> list[dict]:
+    def _get_tools_schema(self) -> list[dict[str, Any]]:
         """
         Получить схему доступных инструментов для function calling.
 
         Returns:
             Список схем инструментов в формате OpenAI
         """
-        tools = []
+        tools: list[dict[str, Any]] = []
 
         # Wikipedia search
         if self.wikipedia_tool:
@@ -150,7 +151,7 @@ class LLMClient:
 
         return tools
 
-    async def _execute_tool(self, tool_name: str, arguments: dict) -> str:
+    async def _execute_tool(self, tool_name: str, arguments: dict[str, Any]) -> str:
         """
         Выполнить вызов инструмента.
 
@@ -167,19 +168,19 @@ class LLMClient:
             query = arguments.get("query", "")
             language = arguments.get("language", "ru")
             result = await self.wikipedia_tool.search(query, language)
-            return result
+            return str(result)
 
         elif tool_name == "get_current_datetime":
             timezone = arguments.get("timezone", "UTC")
             format_type = arguments.get("format_type", "full")
             result = self.datetime_tool.get_current_datetime(timezone, format_type)
-            return result
+            return str(result)
 
         elif tool_name == "web_search":
             query = arguments.get("query", "")
             max_results = arguments.get("max_results", 3)
             result = await self.websearch_tool.search(query, max_results)
-            return result
+            return str(result)
 
         logger.warning(f"Неизвестный tool: {tool_name}")
         return f"Ошибка: инструмент '{tool_name}' не найден"
@@ -219,14 +220,14 @@ class LLMClient:
                 if tools:
                     response = await self.client.chat.completions.create(
                         model=self.config.openai_model,
-                        messages=request_messages,
-                        tools=tools,
+                        messages=request_messages,  # type: ignore[arg-type]
+                        tools=tools,  # type: ignore[arg-type]
                         max_completion_tokens=10000,
                     )
                 else:
                     response = await self.client.chat.completions.create(
                         model=self.config.openai_model,
-                        messages=request_messages,
+                        messages=request_messages,  # type: ignore[arg-type]
                         max_completion_tokens=12000,
                     )
 
@@ -245,8 +246,8 @@ class LLMClient:
                         "id": tc.id,
                         "type": "function",
                         "function": {
-                            "name": tc.function.name,
-                            "arguments": tc.function.arguments,
+                            "name": tc.function.name,  # type: ignore[union-attr]
+                            "arguments": tc.function.arguments,  # type: ignore[union-attr]
                         },
                     }
                     for tc in assistant_message.tool_calls
@@ -255,15 +256,15 @@ class LLMClient:
                 request_messages.append(
                     {
                         "role": "assistant",
-                        "content": assistant_message.content,
-                        "tool_calls": tool_calls_data,
+                        "content": assistant_message.content,  # type: ignore[dict-item]
+                        "tool_calls": tool_calls_data,  # type: ignore[dict-item]
                     }
                 )
 
                 # Выполняем tool calls
                 for tool_call in assistant_message.tool_calls:
-                    tool_name = tool_call.function.name
-                    arguments = json.loads(tool_call.function.arguments)
+                    tool_name = tool_call.function.name  # type: ignore[union-attr]
+                    arguments = json.loads(tool_call.function.arguments)  # type: ignore[union-attr]
 
                     # Проверяем лимит веб-запросов
                     if tool_name == "web_search":

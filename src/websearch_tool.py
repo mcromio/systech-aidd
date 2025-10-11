@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 class WebSearchTool:
     """Инструмент для поиска актуальной информации через DuckDuckGo."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Инициализация WebSearchTool."""
         self.ddgs = DDGS()
         logger.info("WebSearchTool инициализирован")

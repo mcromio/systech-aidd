@@ -40,6 +40,8 @@ class MessageHandler:
         Args:
             message: Сообщение от пользователя
         """
+        if not message.from_user:
+            return
         user_id = message.from_user.id
         logger.info(f"Команда /start от пользователя {user_id}")
 
@@ -60,6 +62,8 @@ class MessageHandler:
         Args:
             message: Сообщение от пользователя
         """
+        if not message.from_user:
+            return
         user_id = message.from_user.id
         logger.info(f"Команда /help от пользователя {user_id}")
 
@@ -85,6 +89,8 @@ class MessageHandler:
         Args:
             message: Сообщение от пользователя
         """
+        if not message.from_user:
+            return
         user_id = message.from_user.id
         logger.info(f"Команда /reset от пользователя {user_id}")
 
@@ -100,6 +106,8 @@ class MessageHandler:
         Args:
             message: Сообщение от пользователя
         """
+        if not message.from_user or not message.text:
+            return
         user_id = message.from_user.id
         user_text = message.text
 

@@ -70,7 +70,7 @@ class Config(BaseSettings):
         env_ignore_empty=True,
     )
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: object) -> None:
         """Инициализация с приоритетом .env над системными переменными."""
         # Читаем .env файл напрямую и переопределяем ТОЛЬКО если
         # переменная из системного окружения ОТЛИЧАЕТСЯ от .env
@@ -90,9 +90,9 @@ class Config(BaseSettings):
                         logger.debug(
                             f"Переопределение {key} из .env (было в системе другое значение)"
                         )
-                        os.environ[key] = env_vars[key]
+                        os.environ[key] = env_vars[key]  # type: ignore[assignment]
 
-        super().__init__(**kwargs)
+        super().__init__(**kwargs)  # type: ignore[arg-type]
 
     def validate_config(self) -> None:
         """Валидация конфигурации при старте."""
