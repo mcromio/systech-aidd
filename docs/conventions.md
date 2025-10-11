@@ -161,7 +161,7 @@ def test_add_message():
 ```bash
 TELEGRAM_BOT_TOKEN=...
 OPENAI_API_KEY=...
-OPENAI_BASE_URL=...  # прокси URL
+OPENAI_PROXY_URL=...  # прокси URL
 OPENAI_MODEL=gpt-4o-mini
 SYSTEM_PROMPT=You are a helpful assistant...
 MAX_CONTEXT_MESSAGES=10
@@ -175,7 +175,7 @@ from pydantic_settings import BaseSettings
 class Config(BaseSettings):
     telegram_bot_token: str
     openai_api_key: str
-    openai_base_url: str  # прокси
+    openai_proxy_url: str  # прокси
     # ... см. vision.md раздел 5
 ```
 

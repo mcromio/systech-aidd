@@ -14,7 +14,7 @@ def config(monkeypatch):
     """Фикстура конфигурации."""
     monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "123:ABC")
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
-    monkeypatch.setenv("OPENAI_BASE_URL", "https://api.test.com")
+    monkeypatch.setenv("OPENAI_PROXY_URL", "https://proxy.test.com")
     return Config()
 
 
@@ -191,8 +191,8 @@ async def test_get_response_uses_correct_model(config):
         # Assert
         call_args = mock_create.call_args
         assert call_args.kwargs["model"] == config.openai_model
-        assert call_args.kwargs["temperature"] == 0.7
-        assert call_args.kwargs["max_tokens"] == 2000
+        assert call_args.kwargs["temperature"] == 0.1
+        assert call_args.kwargs["max_tokens"] == 12000
 
 
 @pytest.mark.asyncio
@@ -218,7 +218,11 @@ async def test_get_tools_schema_without_wikipedia(config):
 
     tools = client._get_tools_schema()
 
-    assert tools == []
+    # Теперь всегда есть datetime и websearch tools
+    assert len(tools) == 2
+    tool_names = [t["function"]["name"] for t in tools]
+    assert "get_current_datetime" in tool_names
+    assert "web_search" in tool_names
 
 
 @pytest.mark.asyncio

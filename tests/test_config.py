@@ -11,7 +11,7 @@ def test_config_loads_from_env(monkeypatch):
     # Arrange
     monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "123:ABC")
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
-    monkeypatch.setenv("OPENAI_BASE_URL", "https://api.test.com")
+    monkeypatch.setenv("OPENAI_PROXY_URL", "https://proxy.test.com")
 
     # Act
     config = Config()
@@ -19,7 +19,7 @@ def test_config_loads_from_env(monkeypatch):
     # Assert
     assert config.telegram_bot_token == "123:ABC"
     assert config.openai_api_key == "sk-test"
-    assert config.openai_base_url == "https://api.test.com"
+    assert config.openai_proxy_url == "https://proxy.test.com"
 
 
 def test_config_default_values(monkeypatch):
@@ -27,13 +27,14 @@ def test_config_default_values(monkeypatch):
     # Arrange
     monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "123:ABC")
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
-    monkeypatch.setenv("OPENAI_BASE_URL", "https://api.test.com")
+    monkeypatch.setenv("OPENAI_PROXY_URL", "https://proxy.test.com")
 
     # Act
     config = Config()
 
     # Assert
     assert config.openai_model == "gpt-4o-mini"
+    assert config.openai_timeout == 30.0
     assert config.max_context_messages == 10
     assert config.log_level == "INFO"
 
@@ -43,8 +44,9 @@ def test_config_custom_values(monkeypatch):
     # Arrange
     monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "123:ABC")
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
-    monkeypatch.setenv("OPENAI_BASE_URL", "https://api.test.com")
+    monkeypatch.setenv("OPENAI_PROXY_URL", "https://proxy.test.com")
     monkeypatch.setenv("OPENAI_MODEL", "gpt-4")
+    monkeypatch.setenv("OPENAI_TIMEOUT", "60.0")
     monkeypatch.setenv("MAX_CONTEXT_MESSAGES", "20")
     monkeypatch.setenv("LOG_LEVEL", "DEBUG")
 
@@ -53,6 +55,7 @@ def test_config_custom_values(monkeypatch):
 
     # Assert
     assert config.openai_model == "gpt-4"
+    assert config.openai_timeout == 60.0
     assert config.max_context_messages == 20
     assert config.log_level == "DEBUG"
 
@@ -62,7 +65,7 @@ def test_config_validation_max_context_messages(monkeypatch):
     # Arrange
     monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "123:ABC")
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
-    monkeypatch.setenv("OPENAI_BASE_URL", "https://api.test.com")
+    monkeypatch.setenv("OPENAI_PROXY_URL", "https://proxy.test.com")
     monkeypatch.setenv("MAX_CONTEXT_MESSAGES", "100")  # Больше 50
 
     # Act & Assert
@@ -75,7 +78,7 @@ def test_validate_config_success(monkeypatch):
     # Arrange
     monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "123:ABC")
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
-    monkeypatch.setenv("OPENAI_BASE_URL", "https://api.test.com")
+    monkeypatch.setenv("OPENAI_PROXY_URL", "https://proxy.test.com")
 
     # Act
     config = Config()
@@ -89,7 +92,7 @@ def test_validate_config_missing_telegram_token(monkeypatch):
     # Arrange
     monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "")
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
-    monkeypatch.setenv("OPENAI_BASE_URL", "https://api.test.com")
+    monkeypatch.setenv("OPENAI_PROXY_URL", "https://proxy.test.com")
 
     # Act
     config = Config()

@@ -66,7 +66,7 @@ def config(monkeypatch):
     """Фикстура конфигурации для тестов."""
     monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "123:ABC")
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
-    monkeypatch.setenv("OPENAI_BASE_URL", "https://api.test.com")
+    monkeypatch.setenv("OPENAI_PROXY_URL", "https://proxy.test.com")
     monkeypatch.setenv("MAX_CONTEXT_MESSAGES", "10")
     return Config()
 

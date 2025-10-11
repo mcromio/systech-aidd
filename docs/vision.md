@@ -158,7 +158,7 @@ Response → User
 **Поля:**
 - `TELEGRAM_BOT_TOKEN` - токен Telegram бота
 - `OPENAI_API_KEY` - ключ OpenAI API
-- `OPENAI_BASE_URL` - URL прокси для OpenAI API
+- `OPENAI_PROXY_URL` - URL прокси для OpenAI API
 - `OPENAI_MODEL` - название модели (gpt-4, gpt-3.5-turbo и т.д.)
 - `SYSTEM_PROMPT` - системный промпт для LLM
 - `MAX_CONTEXT_MESSAGES` - макс. количество сообщений в истории
@@ -295,7 +295,8 @@ class Config(BaseSettings):
     
     telegram_bot_token: str
     openai_api_key: str
-    openai_base_url: str
+    openai_proxy_url: str
+    openai_timeout: float = 30.0
     openai_model: str = "gpt-4o-mini"
     system_prompt: str = "Ты полезный ассистент. Отвечай на вопросы пользователя."
     max_context_messages: int = 10
@@ -421,7 +422,8 @@ UserContext(
 ```bash
 TELEGRAM_BOT_TOKEN=1234567890:ABCdefGHIjklMNOpqrsTUVwxyz
 OPENAI_API_KEY=sk-proj-xxxxxxxxxxxxx
-OPENAI_BASE_URL=https://api.your-proxy.com/v1
+OPENAI_PROXY_URL=https://api.your-proxy.com/v1
+OPENAI_TIMEOUT=30.0
 OPENAI_MODEL=gpt-4o-mini
 SYSTEM_PROMPT=Ты эксперт в программировании на Python. Помогай с кодом.
 MAX_CONTEXT_MESSAGES=15
@@ -455,7 +457,10 @@ class LLMClient:
         
         self.client = AsyncOpenAI(
             api_key=config.openai_api_key,
-            base_url=config.openai_base_url  # прокси
+            http_client=httpx.AsyncClient(
+                proxy=config.openai_proxy_url,
+                timeout=config.openai_timeout
+            )
         )
         
         self.tools = self._get_tools_schema()
@@ -839,7 +844,8 @@ TELEGRAM_BOT_TOKEN=1234567890:ABCdefGHIjklMNOpqrsTUVwxyz
 
 # OpenAI Configuration
 OPENAI_API_KEY=sk-proj-xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-OPENAI_BASE_URL=https://api.your-proxy.com/v1
+OPENAI_PROXY_URL=https://api.your-proxy.com/v1
+OPENAI_TIMEOUT=30.0
 OPENAI_MODEL=gpt-4o-mini
 
 # Bot Behavior
@@ -864,7 +870,8 @@ class Config(BaseSettings):
     
     # OpenAI
     openai_api_key: str = Field(..., description="API ключ OpenAI")
-    openai_base_url: str = Field(..., description="URL прокси для OpenAI")
+    openai_proxy_url: str = Field(..., description="URL прокси для OpenAI")
+    openai_timeout: float = Field(default=30.0, ge=1.0, description="Таймаут для запросов к OpenAI (секунды)")
     openai_model: str = Field(default="gpt-4o-mini", description="Модель LLM")
     
     # Поведение
@@ -894,8 +901,8 @@ class Config(BaseSettings):
             raise ValueError("TELEGRAM_BOT_TOKEN обязателен")
         if not self.openai_api_key:
             raise ValueError("OPENAI_API_KEY обязателен")
-        if not self.openai_base_url:
-            raise ValueError("OPENAI_BASE_URL обязателен")
+        if not self.openai_proxy_url:
+            raise ValueError("OPENAI_PROXY_URL обязателен")
 ```
 
 ### Загрузка конфигурации
@@ -1243,7 +1250,7 @@ services:
     environment:
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - OPENAI_BASE_URL=${OPENAI_BASE_URL}
+      - OPENAI_PROXY_URL=${OPENAI_PROXY_URL}
       - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-mini}
       - SYSTEM_PROMPT=${SYSTEM_PROMPT}
       - MAX_CONTEXT_MESSAGES=${MAX_CONTEXT_MESSAGES:-10}

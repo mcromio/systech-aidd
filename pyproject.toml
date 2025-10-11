@@ -11,10 +11,12 @@ license = {text = "MIT"}
 
 dependencies = [
     "aiogram>=3.13.0",
+    "duckduckgo-search>=8.1.1",
     "openai>=1.51.0",
     "pydantic>=2.9.0",
     "pydantic-settings>=2.5.0",
     "python-dotenv>=1.0.0",
+    "pytz>=2025.2",
     "wikipedia-api>=0.7.0",
 ]
 
