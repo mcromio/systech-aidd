@@ -15,7 +15,7 @@
 | **Iter 4** | LLMClient (базовый) | ✅ DONE | ✅ | 2025-10-10 |
 | **Iter 5** | Function Calling | ✅ DONE | ✅ | 2025-10-10 |
 | **Iter 6** | Telegram Bot | ✅ DONE | ✅ | 2025-10-10 |
-| **Iter 7** | Команда /role (TDD) | 🔄 IN PROGRESS | 🔲 | - |
+| **Iter 7** | Команда /role (TDD) | ✅ DONE | ✅ | 2025-10-11 |
 | **Iter 8** | Полная интеграция | 🔲 TODO | 🔲 | - |
 | **Iter 9** | Docker + финализация | 🔲 TODO | 🔲 | - |
 
