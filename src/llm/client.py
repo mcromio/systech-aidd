@@ -68,9 +68,7 @@ class OpenAIClient:
         """
         # Выбираем max_tokens в зависимости от наличия tools
         max_tokens = (
-            self.config.llm_max_tokens_with_tools
-            if tools
-            else self.config.llm_max_tokens_no_tools
+            self.config.llm_max_tokens_with_tools if tools else self.config.llm_max_tokens_no_tools
         )
 
         logger.debug(
@@ -93,4 +91,3 @@ class OpenAIClient:
                 messages=messages,  # type: ignore[arg-type]
                 max_completion_tokens=max_tokens,
             )
-

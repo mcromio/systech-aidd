@@ -23,9 +23,7 @@ class UserContext(BaseModel):
     user_id: int
     messages: list[Message] = []
 
-    def add_message(
-        self, role: Literal["user", "assistant", "system"], content: str
-    ) -> None:
+    def add_message(self, role: Literal["user", "assistant", "system"], content: str) -> None:
         """Добавить сообщение в историю."""
         self.messages.append(Message(role=role, content=content))
 

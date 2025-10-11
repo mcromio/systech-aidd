@@ -234,7 +234,9 @@ async def test_execute_tool_wikipedia(config):
     wiki_tool = WikipediaTool(config)
     client = LLMClient(config, tools=[wiki_tool])
 
-    result = await client.orchestrator._execute_tool("search_wikipedia", {"query": "Python", "language": "en"})
+    result = await client.orchestrator._execute_tool(
+        "search_wikipedia", {"query": "Python", "language": "en"}
+    )
 
     assert result is not None
     assert len(result) > 0

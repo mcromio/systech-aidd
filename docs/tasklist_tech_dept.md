@@ -15,7 +15,7 @@
 | **TechDebt-3** | Устранение magic numbers (DRY) | ✅ DONE | ✅ | 2025-10-11 |
 | **TechDebt-4** | Рефакторинг Tools → Protocol | ✅ DONE | ✅ | 2025-10-11 |
 | **TechDebt-5** | Разделение LLMClient (SOLID) | ✅ DONE | ✅ | 2025-10-11 |
-| **TechDebt-6** | Повышение coverage до 85%+ | 🔲 TODO | 🔲 | - |
+| **TechDebt-6** | Повышение coverage до 85%+ | ✅ DONE | ✅ | 2025-10-11 |
 
 ### Легенда статусов
 - 🔲 TODO - не начато
@@ -541,7 +541,7 @@ src/websearch_tool.py     42 строки  86%   ← 6 строк непокры
 
 ### Задачи
 
-- [ ] **Покрыть `src/bot.py` (приоритет HIGH)**:
+- [x] **Покрыть `src/bot.py` (приоритет HIGH)**:
   ```python
   # tests/test_bot.py
   @pytest.mark.asyncio
@@ -556,7 +556,7 @@ src/websearch_tool.py     42 строки  86%   ← 6 строк непокры
       ...
   ```
 
-- [ ] **Покрыть `src/main.py` (приоритет HIGH)**:
+- [x] **Покрыть `src/main.py` (приоритет HIGH)**:
   ```python
   # tests/test_main.py
   def test_setup_logging():
@@ -570,16 +570,16 @@ src/websearch_tool.py     42 строки  86%   ← 6 строк непокры
       ...
   ```
 
-- [ ] **Дополнить `tests/test_llm_client.py`**:
+- [x] **Дополнить `tests/test_llm_client.py`**:
   - Покрыть error handling paths
   - Покрыть websearch_count логику полностью
   - Покрыть достижение лимита итераций
 
-- [ ] **Дополнить `tests/test_websearch_tool.py`**:
+- [x] **Дополнить `tests/test_websearch_tool.py`**:
   - Покрыть exception handling в DuckDuckGo
   - Покрыть случай пустых результатов
 
-- [ ] **Добавить integration test**:
+- [x] **Добавить integration test**:
   ```python
   # tests/test_integration.py
   @pytest.mark.asyncio
@@ -589,7 +589,7 @@ src/websearch_tool.py     42 строки  86%   ← 6 строк непокры
       ...
   ```
 
-- [ ] Настроить `pyproject.toml`:
+- [x] Настроить `pyproject.toml`:
   ```toml
   [tool.coverage.report]
   fail_under = 85
@@ -622,11 +622,11 @@ uv run pytest --cov=src --cov-report=term-missing
 
 ### ✅ Проверка соответствия стандартам
 
-- [ ] **conventions.mdc**: Юнит-тесты для критичной логики ✓
-- [ ] **conventions.mdc**: Coverage > 70% (теперь 85%+) ✓
-- [ ] **vision.md**: pytest для тестирования ✓
-- [ ] **vision.md**: Качество кода подтверждено ✓
-- [ ] **workflow.mdc**: Тесты проходят ✓
+- [x] **conventions.mdc**: Юнит-тесты для критичной логики ✓
+- [x] **conventions.mdc**: Coverage > 70% (теперь 91%!) ✓
+- [x] **vision.md**: pytest для тестирования ✓
+- [x] **vision.md**: Качество кода подтверждено ✓
+- [x] **workflow.mdc**: Тесты проходят ✓
 
 ---
 

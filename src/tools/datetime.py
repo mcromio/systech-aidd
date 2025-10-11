@@ -119,4 +119,3 @@ class DateTimeTool:
         except Exception as e:
             logger.error(f"Ошибка при получении даты/времени: {e}", exc_info=True)
             return f"Ошибка при получении даты/времени: {e}"
-

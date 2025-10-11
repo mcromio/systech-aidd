@@ -113,4 +113,3 @@ class WikipediaTool:
         except Exception as e:
             logger.error(f"Ошибка поиска в Wikipedia: {e}")
             return f"Ошибка при поиске в Wikipedia: {str(e)}"
-

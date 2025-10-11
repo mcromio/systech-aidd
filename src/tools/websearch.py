@@ -140,4 +140,3 @@ class WebSearchTool:
         except Exception as e:
             logger.error(f"Ошибка в WebSearchTool: {e}", exc_info=True)
             return f"Ошибка при поиске информации: {e}"
-

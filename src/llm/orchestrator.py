@@ -190,4 +190,3 @@ class ToolOrchestrator:
         except Exception as e:
             logger.error(f"Ошибка при обработке с tools: {e}", exc_info=True)
             return None
-
