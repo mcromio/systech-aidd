@@ -1,21 +1,23 @@
-"""Клиент для работы с OpenAI LLM."""
+"""Фасад для работы с OpenAI LLM (обратная совместимость)."""
 
-import json
 import logging
-from typing import Any
-
-import httpx
-from openai import AsyncOpenAI
 
 from src.config import Config
 from src.context_manager import Message
+from src.llm import OpenAIClient, ToolOrchestrator
 from src.tools import DateTimeTool, Tool, WebSearchTool, WikipediaTool
 
 logger = logging.getLogger(__name__)
 
 
 class LLMClient:
-    """Клиент для работы с OpenAI API."""
+    """
+    Фасад для работы с LLM (обратная совместимость).
+
+    Делегирует работу специализированным компонентам:
+    - OpenAIClient: HTTP + OpenAI API
+    - ToolOrchestrator: function calling цикл
+    """
 
     def __init__(
         self,
@@ -32,19 +34,17 @@ class LLMClient:
         self.config = config
         self.tools = tools if tools is not None else self._get_default_tools()
 
-        # Создаем HTTP клиент с прокси
-        http_client = httpx.AsyncClient(
-            proxy=config.openai_proxy_url,
-            timeout=config.openai_timeout,
+        # Создаем компоненты (композиция)
+        self.openai_client = OpenAIClient(config)
+        self.orchestrator = ToolOrchestrator(
+            self.openai_client,
+            self.tools,
+            config,
         )
 
-        self.client = AsyncOpenAI(
-            api_key=config.openai_api_key,
-            http_client=http_client,
-        )
         logger.info(
-            f"LLMClient инициализирован с моделью {config.openai_model} "
-            f"через прокси {config.openai_proxy_url}, tools: {len(self.tools)}"
+            f"LLMClient (фасад) инициализирован: модель={config.openai_model}, "
+            f"tools={len(self.tools)}"
         )
 
     def _get_default_tools(self) -> list[Tool]:
@@ -60,154 +60,20 @@ class LLMClient:
             WebSearchTool(self.config),
         ]
 
-    def _get_tools_schema(self) -> list[dict[str, Any]]:
-        """
-        Получить схему доступных инструментов для function calling.
-
-        Returns:
-            Список схем инструментов в формате OpenAI
-        """
-        return [tool.get_schema() for tool in self.tools]
-
-    async def _execute_tool(self, tool_name: str, arguments: dict[str, Any]) -> str:
-        """
-        Выполнить вызов инструмента.
-
-        Args:
-            tool_name: Имя инструмента
-            arguments: Аргументы для инструмента
-
-        Returns:
-            Результат выполнения инструмента
-        """
-        logger.info(f"Выполнение tool: {tool_name} с аргументами {arguments}")
-
-        # Ищем инструмент по имени в схеме
-        for tool in self.tools:
-            schema = tool.get_schema()
-            if schema["function"]["name"] == tool_name:
-                result = await tool.execute(**arguments)
-                return str(result)
-
-        logger.warning(f"Неизвестный tool: {tool_name}")
-        return f"Ошибка: инструмент '{tool_name}' не найден"
-
     async def get_response(self, messages: list[Message]) -> str | None:
         """
         Получить ответ от LLM с поддержкой function calling.
+
+        Делегирует работу ToolOrchestrator.
 
         Args:
             messages: История сообщений
 
         Returns:
             Ответ от LLM или None при ошибке
+
+        Examples:
+            >>> client = LLMClient(config)
+            >>> response = await client.get_response(messages)
         """
-        try:
-            # Формируем запрос с системным промптом
-            request_messages = [{"role": "system", "content": self.config.system_prompt}]
-
-            # Добавляем историю диалога
-            for msg in messages:
-                request_messages.append({"role": msg.role, "content": msg.content})
-
-            tools = self._get_tools_schema()
-
-            # Счетчик веб-запросов (максимум 2)
-            websearch_count = 0
-            max_websearch = self.config.llm_max_websearch_calls
-
-            # Цикл обработки tool calls
-            for iteration in range(self.config.llm_max_tool_iterations):
-                logger.debug(
-                    f"Запрос к LLM (итерация {iteration + 1}): {len(request_messages)} сообщений"
-                )
-
-                # Запрос к OpenAI API
-                # Для некоторых моделей (gpt-5) temperature не настраивается - используем дефолт
-                if tools:
-                    response = await self.client.chat.completions.create(
-                        model=self.config.openai_model,
-                        messages=request_messages,  # type: ignore[arg-type]
-                        tools=tools,  # type: ignore[arg-type]
-                        max_completion_tokens=self.config.llm_max_tokens_with_tools,
-                    )
-                else:
-                    response = await self.client.chat.completions.create(
-                        model=self.config.openai_model,
-                        messages=request_messages,  # type: ignore[arg-type]
-                        max_completion_tokens=self.config.llm_max_tokens_no_tools,
-                    )
-
-                assistant_message = response.choices[0].message
-
-                # Если нет tool calls, возвращаем ответ
-                if not assistant_message.tool_calls:
-                    content = assistant_message.content
-                    logger.info("Получен финальный ответ от LLM")
-                    return content
-
-                # Добавляем сообщение ассистента с tool calls
-                # Формируем вручную, чтобы избежать лишних полей
-                tool_calls_data = [
-                    {
-                        "id": tc.id,
-                        "type": "function",
-                        "function": {
-                            "name": tc.function.name,  # type: ignore[union-attr]
-                            "arguments": tc.function.arguments,  # type: ignore[union-attr]
-                        },
-                    }
-                    for tc in assistant_message.tool_calls
-                ]
-
-                request_messages.append(
-                    {
-                        "role": "assistant",
-                        "content": assistant_message.content,  # type: ignore[dict-item]
-                        "tool_calls": tool_calls_data,  # type: ignore[dict-item]
-                    }
-                )
-
-                # Выполняем tool calls
-                for tool_call in assistant_message.tool_calls:
-                    tool_name = tool_call.function.name  # type: ignore[union-attr]
-                    arguments = json.loads(tool_call.function.arguments)  # type: ignore[union-attr]
-
-                    # Проверяем лимит веб-запросов
-                    if tool_name == "web_search":
-                        if websearch_count >= max_websearch:
-                            logger.warning(
-                                f"Достигнут лимит веб-запросов ({max_websearch}). Пропускаем вызов."
-                            )
-                            tool_result = (
-                                f"⚠️ Достигнут лимит веб-запросов ({max_websearch}). "
-                                "Используй уже полученную информацию для ответа."
-                            )
-                        else:
-                            websearch_count += 1
-                            logger.info(
-                                f"Вызов tool: {tool_name} (веб-запрос {websearch_count}/{max_websearch})"
-                            )
-                            tool_result = await self._execute_tool(tool_name, arguments)
-                    else:
-                        logger.info(f"Вызов tool: {tool_name}")
-                        tool_result = await self._execute_tool(tool_name, arguments)
-
-                    # Добавляем результат tool call
-                    request_messages.append(
-                        {
-                            "role": "tool",
-                            "tool_call_id": tool_call.id,
-                            "content": tool_result,
-                        }
-                    )
-
-            # Если достигли лимита итераций
-            logger.warning(
-                f"Достигнут лимит итераций tool calls ({self.config.llm_max_tool_iterations})"
-            )
-            return "Извините, не удалось получить ответ (превышен лимит запросов). Попробуйте задать более конкретный вопрос."
-
-        except Exception as e:
-            logger.error(f"Ошибка при обращении к LLM: {e}", exc_info=True)
-            return None
+        return await self.orchestrator.process_with_tools(messages)

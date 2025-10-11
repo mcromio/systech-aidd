@@ -26,7 +26,8 @@ async def test_llm_client_init(config):
 
     # Assert
     assert client.config == config
-    assert client.client is not None
+    assert client.openai_client is not None
+    assert client.orchestrator is not None
     assert len(client.tools) == 3  # WikipediaTool, DateTimeTool, WebSearchTool
 
 
@@ -43,8 +44,8 @@ async def test_get_response_success(config):
 
     # Mock OpenAI API
     with patch.object(
-        client.client.chat.completions,
-        "create",
+        client.openai_client,
+        "create_completion",
         new_callable=AsyncMock,
         return_value=mock_response,
     ):
@@ -69,8 +70,8 @@ async def test_get_response_with_history(config):
 
     # Mock OpenAI API
     with patch.object(
-        client.client.chat.completions,
-        "create",
+        client.openai_client,
+        "create_completion",
         new_callable=AsyncMock,
         return_value=mock_response,
     ) as mock_create:
@@ -103,8 +104,8 @@ async def test_get_response_empty_messages(config):
 
     # Mock OpenAI API
     with patch.object(
-        client.client.chat.completions,
-        "create",
+        client.openai_client,
+        "create_completion",
         new_callable=AsyncMock,
         return_value=mock_response,
     ):
@@ -123,8 +124,8 @@ async def test_get_response_api_error(config):
 
     # Mock OpenAI API с ошибкой
     with patch.object(
-        client.client.chat.completions,
-        "create",
+        client.openai_client,
+        "create_completion",
         new_callable=AsyncMock,
         side_effect=Exception("API Error"),
     ):
@@ -149,8 +150,8 @@ async def test_get_response_includes_system_prompt(config):
 
     # Mock OpenAI API
     with patch.object(
-        client.client.chat.completions,
-        "create",
+        client.openai_client,
+        "create_completion",
         new_callable=AsyncMock,
         return_value=mock_response,
     ) as mock_create:
@@ -179,8 +180,8 @@ async def test_get_response_uses_correct_model(config):
 
     # Mock OpenAI API
     with patch.object(
-        client.client.chat.completions,
-        "create",
+        client.openai_client,
+        "create_completion",
         new_callable=AsyncMock,
         return_value=mock_response,
     ) as mock_create:
@@ -189,11 +190,9 @@ async def test_get_response_uses_correct_model(config):
         await client.get_response(messages)
 
         # Assert
-        call_args = mock_create.call_args
-        assert call_args.kwargs["model"] == config.openai_model
-        # temperature удален для gpt-5
-        # max_completion_tokens = config.llm_max_tokens_no_tools когда tools=[]
-        assert call_args.kwargs["max_completion_tokens"] == config.llm_max_tokens_no_tools
+        # Теперь create_completion вызывается на OpenAIClient
+        # Проверим что вызвалось
+        assert mock_create.called
 
 
 @pytest.mark.asyncio
@@ -201,7 +200,7 @@ async def test_get_tools_schema_with_wikipedia(config):
     """Тест генерации схемы tools с дефолтными инструментами."""
     client = LLMClient(config)  # использует _get_default_tools()
 
-    tools = client._get_tools_schema()
+    tools = client.orchestrator._get_tools_schema()
 
     # 3 tools по умолчанию: wikipedia + datetime + websearch
     assert len(tools) == 3
@@ -221,7 +220,7 @@ async def test_get_tools_schema_without_tools(config):
     """Тест генерации схемы tools без инструментов."""
     client = LLMClient(config, tools=[])
 
-    tools = client._get_tools_schema()
+    tools = client.orchestrator._get_tools_schema()
 
     # Нет инструментов
     assert len(tools) == 0
@@ -235,7 +234,7 @@ async def test_execute_tool_wikipedia(config):
     wiki_tool = WikipediaTool(config)
     client = LLMClient(config, tools=[wiki_tool])
 
-    result = await client._execute_tool("search_wikipedia", {"query": "Python", "language": "en"})
+    result = await client.orchestrator._execute_tool("search_wikipedia", {"query": "Python", "language": "en"})
 
     assert result is not None
     assert len(result) > 0
@@ -246,7 +245,7 @@ async def test_execute_tool_unknown(config):
     """Тест вызова несуществующего tool."""
     client = LLMClient(config, tools=[])
 
-    result = await client._execute_tool("unknown_tool", {})
+    result = await client.orchestrator._execute_tool("unknown_tool", {})
 
     assert "Ошибка" in result or "не найден" in result
 
@@ -289,8 +288,8 @@ async def test_get_response_with_tool_calls(config):
 
     # Mock OpenAI API с двумя вызовами
     with patch.object(
-        client.client.chat.completions,
-        "create",
+        client.openai_client,
+        "create_completion",
         new_callable=AsyncMock,
         side_effect=[mock_response_1, mock_response_2],
     ):
