@@ -191,8 +191,9 @@ async def test_get_response_uses_correct_model(config):
         # Assert
         call_args = mock_create.call_args
         assert call_args.kwargs["model"] == config.openai_model
-        assert call_args.kwargs["temperature"] == 0.1
-        assert call_args.kwargs["max_tokens"] == 12000
+        # temperature удален для gpt-5
+        # max_completion_tokens = 10000 когда есть tools (datetime + websearch)
+        assert call_args.kwargs["max_completion_tokens"] == 10000
 
 
 @pytest.mark.asyncio
@@ -205,10 +206,17 @@ async def test_get_tools_schema_with_wikipedia(config):
 
     tools = client._get_tools_schema()
 
-    assert len(tools) == 1
-    assert tools[0]["type"] == "function"
-    assert tools[0]["function"]["name"] == "search_wikipedia"
-    assert "query" in tools[0]["function"]["parameters"]["properties"]
+    # Теперь 3 tools: wikipedia + datetime + websearch
+    assert len(tools) == 3
+    tool_names = [t["function"]["name"] for t in tools]
+    assert "search_wikipedia" in tool_names
+    assert "get_current_datetime" in tool_names
+    assert "web_search" in tool_names
+
+    # Проверяем структуру wikipedia tool
+    wiki_tool_schema = next(t for t in tools if t["function"]["name"] == "search_wikipedia")
+    assert wiki_tool_schema["type"] == "function"
+    assert "query" in wiki_tool_schema["function"]["parameters"]["properties"]
 
 
 @pytest.mark.asyncio
