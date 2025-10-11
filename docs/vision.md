@@ -23,6 +23,8 @@
 ### Инструменты разработки
 - **ruff** - современный линтер и форматтер (замена black + flake8 + isort)
 - **pytest** - фреймворк для юнит-тестирования
+- **mypy** - статическая проверка типов (добавляется в TechDebt-2)
+- **pytest-cov** - измерение покрытия тестами
 
 ---
 
@@ -54,11 +56,14 @@
 - Все IO операции асинхронные
 
 ### Качество кода
-- **Type hints** везде (обязательно для всех аргументов и возвратов)
+- **Type hints** везде (обязательно для всех аргументов и возвратов, Python 3.12 стиль)
 - **Docstrings** на русском для всех публичных методов
 - **Логирование** только через logging (не print())
 - **Короткие методы** максимум 30-40 строк
-- **Юнит-тесты** для критичной бизнес-логики
+- **Юнит-тесты** для критичной бизнес-логики (coverage >= 85%)
+- **SOLID принципы** - особенно Single Responsibility
+- **DRY принцип** - не дублировать код > 2 раз
+- **Magic numbers → Config** - все константы в конфигурации
 
 ---
 
@@ -71,19 +76,46 @@ systech-aidd_mcr/
 │   ├── main.py              # Точка входа, запуск бота
 │   ├── bot.py               # TelegramBot класс (aiogram setup)
 │   ├── handlers.py          # MessageHandler класс (обработка сообщений)
-│   ├── llm_client.py        # LLMClient класс (OpenAI API)
+│   ├── llm_client.py        # LLMClient класс (фасад, обратная совместимость)
 │   ├── context_manager.py   # ContextManager класс (история диалогов)
-│   └── config.py            # Config класс (настройки из .env)
+│   ├── config.py            # Config класс (настройки из .env)
+│   │
+│   ├── llm/                 # ← NEW (TechDebt-5): LLM компоненты
+│   │   ├── __init__.py
+│   │   ├── client.py        # OpenAIClient (чистый wrapper OpenAI API)
+│   │   └── orchestrator.py  # ToolOrchestrator (tool calling loop)
+│   │
+│   └── tools/               # ← NEW (TechDebt-4): Tools с Protocol
+│       ├── __init__.py
+│       ├── base.py          # Tool Protocol (интерфейс)
+│       ├── wikipedia.py     # WikipediaTool
+│       ├── datetime.py      # DateTimeTool
+│       └── websearch.py     # WebSearchTool
 │
 ├── tests/
 │   ├── __init__.py
 │   ├── test_context_manager.py
 │   ├── test_llm_client.py
-│   └── test_handlers.py
+│   ├── test_handlers.py
+│   ├── test_llm/            # ← NEW: тесты для llm компонентов
+│   │   ├── test_client.py
+│   │   └── test_orchestrator.py
+│   ├── test_tools/          # ← NEW: тесты для tools
+│   │   └── ...
+│   └── test_integration.py  # ← NEW: интеграционные тесты
 │
 ├── docs/
 │   ├── idea.md              # Концепция проекта
-│   └── vision.md            # Техническое видение (этот документ)
+│   ├── vision.md            # Техническое видение (этот документ)
+│   ├── tasklist.md          # Основной tasklist (MVP)
+│   ├── tasklist_tech_dept.md # ← NEW: Tech debt roadmap
+│   ├── workflow.md          # Workflow для основной разработки
+│   └── workflow_tech_debt.md # ← NEW: Workflow для tech debt
+│
+├── .cursor/
+│   └── rules/
+│       ├── conventions.mdc  # Правила разработки (обновлены)
+│       └── workflow.mdc     # Workflow правила
 │
 ├── .env.example             # Шаблон переменных окружения
 ├── .env                     # Реальные токены (в .gitignore)
@@ -1806,9 +1838,91 @@ exclude_lines = [
 ✅ Покрыт базовыми тестами (>70% coverage)  
 ✅ Задокументирован (README, vision)  
 
+### Фаза 6: Technical Debt & Качество (Refactoring Branch)
+**После завершения MVP - работа по [tasklist_tech_dept.md](tasklist_tech_dept.md)**
+
+1. **TechDebt-1**: Исправление падающих тестов
+   - Адаптация тестов после рефакторинга
+   - 0 failed tests обязательно
+
+2. **TechDebt-2**: Добавление mypy + type checking
+   - Статическая типизация
+   - Команда `make type-check`
+
+3. **TechDebt-3**: Устранение magic numbers
+   - Все константы → Config
+   - DRY принцип
+
+4. **TechDebt-4**: Рефакторинг Tools → Protocol
+   - Создание `src/tools/` с единым интерфейсом
+   - Устранение дублирования
+
+5. **TechDebt-5**: Разделение LLMClient (SOLID)
+   - `src/llm/client.py` - OpenAI wrapper
+   - `src/llm/orchestrator.py` - tool calling
+   - Single Responsibility для каждого класса
+
+6. **TechDebt-6**: Повышение coverage до 85%+
+   - Покрытие bot.py, main.py
+   - Integration tests
+   - Все критичные пути покрыты
+
+**Целевые метрики после tech debt:**
+- Coverage: >= 85%
+- Tests: 0 failed, 70+ passed
+- Линтеры: ruff + mypy ✓
+- SOLID: все принципы соблюдены
+- DRY: нет дублирования
+
+---
+
+## 17. Эволюция архитектуры
+
+### MVP архитектура (Фазы 1-5)
+```
+src/
+├── main.py
+├── config.py
+├── bot.py
+├── handlers.py
+├── llm_client.py (монолитный)
+├── context_manager.py
+├── wikipedia_tool.py
+├── datetime_tool.py
+└── websearch_tool.py
+```
+
+### Production-ready архитектура (после Фазы 6)
+```
+src/
+├── main.py
+├── config.py (расширенная с константами)
+├── bot.py
+├── handlers.py
+├── llm_client.py (фасад для обратной совместимости)
+├── context_manager.py
+│
+├── llm/ (SOLID: разделение ответственности)
+│   ├── client.py (OpenAI API wrapper)
+│   └── orchestrator.py (tool calling logic)
+│
+└── tools/ (DRY: единый интерфейс)
+    ├── base.py (Tool Protocol)
+    ├── wikipedia.py
+    ├── datetime.py
+    └── websearch.py
+```
+
+**Преимущества рефакторинга:**
+- ✅ Легче добавлять новые tools (Protocol)
+- ✅ Легче тестировать (мелкие компоненты)
+- ✅ Легче поддерживать (SOLID)
+- ✅ Меньше багов (type checking + coverage)
+
 ---
 
 **Документ завершен**: 10 октября 2025  
-**Версия**: 1.0  
-**Статус**: Готово к реализации ✅
+**Последнее обновление**: 11 октября 2025  
+**Версия**: 2.0  
+**Статус**: Готово к реализации ✅ (MVP + Tech Debt Roadmap)
 

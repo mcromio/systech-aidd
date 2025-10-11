@@ -1,5 +1,5 @@
 ---
-alwaysApply: true
+alwaysApply: false
 ---
 # Code Conventions
 
@@ -270,7 +270,534 @@ for _ in range(5):
 
 ---
 
-**Версия**: 1.0  
-**Дата**: 10 октября 2025  
-**Принцип**: KISS - Keep It Simple, Stupid
+---
+
+## Форматирование и линтеры
+
+### Ruff (форматтер + линтер)
+
+**Форматирование:**
+```bash
+# Автоматическое форматирование
+make format
+# или
+uv run ruff format src/ tests/
+```
+
+**Линтинг:**
+```bash
+# Проверка + автофикс
+make lint
+# или
+uv run ruff check --fix src/ tests/
+```
+
+**Настройка (pyproject.toml):**
+```toml
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+    "N",   # pep8-naming (рекомендуется)
+    "S",   # flake8-bandit security (рекомендуется)
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+```
+
+### Mypy (type checking)
+
+**С TechDebt-2+ добавляется статическая типизация:**
+
+```bash
+# Проверка типов
+make type-check
+# или
+uv run mypy src/
+```
+
+**Настройка (pyproject.toml):**
+```toml
+[tool.mypy]
+python_version = "3.12"
+strict = false  # Постепенное включение
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = ["aiogram.*", "wikipediaapi.*", "duckduckgo_search.*"]
+ignore_missing_imports = true
+```
+
+**Требования:**
+- Используй современные type hints Python 3.12
+- `list[str]` вместо `List[str]`
+- `dict[str, int]` вместо `Dict[str, int]`
+- `str | None` вместо `Optional[str]`
+
+---
+
+## Стандарты тестирования
+
+### Структура тестов
+
+**Организация:**
+```
+tests/
+├── __init__.py
+├── test_module.py         # Юнит-тесты
+├── test_integration.py    # Интеграционные тесты
+└── conftest.py            # Общие фикстуры
+```
+
+**Паттерн AAA (Arrange-Act-Assert):**
+```python
+def test_add_message():
+    """Тест добавления сообщения в историю."""
+    # Arrange - подготовка
+    manager = ContextManager(config)
+    
+    # Act - действие
+    manager.add_message(123, "user", "Hello")
+    
+    # Assert - проверка
+    assert len(manager.get_history(123)) == 1
+    assert manager.get_history(123)[0].content == "Hello"
+```
+
+### Async тесты
+
+```python
+import pytest
+
+@pytest.mark.asyncio
+async def test_llm_response():
+    """Тест асинхронного запроса к LLM."""
+    # Arrange
+    client = LLMClient(config, None)
+    
+    # Act
+    response = await client.get_response(messages)
+    
+    # Assert
+    assert response is not None
+```
+
+### Моки для внешних API
+
+```python
+from unittest.mock import AsyncMock, patch
+
+@pytest.mark.asyncio
+async def test_with_mock():
+    """Тест с моком OpenAI API."""
+    mock_response = MagicMock()
+    mock_response.choices[0].message.content = "Test response"
+    
+    with patch.object(
+        client.client.chat.completions,
+        "create",
+        new_callable=AsyncMock,
+        return_value=mock_response,
+    ):
+        result = await client.get_response(messages)
+        assert result == "Test response"
+```
+
+### Coverage требования
+
+**Минимальные пороги:**
+- **Общий coverage**: >= 85% (после TechDebt-6)
+- **Критичные модули** (handlers, llm_client): >= 90%
+- **Новый код**: >= 95%
+
+**Команды:**
+```bash
+# Запуск с coverage
+make test
+# или
+uv run pytest --cov=src --cov-report=term-missing
+
+# Fail если coverage < 85%
+uv run pytest --cov=src --cov-fail-under=85
+```
+
+**Настройка (pyproject.toml):**
+```toml
+[tool.coverage.run]
+source = ["src"]
+omit = ["tests/*"]
+
+[tool.coverage.report]
+fail_under = 85
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
+```
+
+### Типы тестов
+
+1. **Юнит-тесты** - изолированное тестирование классов/функций
+2. **Интеграционные тесты** - тестирование взаимодействия компонентов
+3. **End-to-end тесты** - тестирование полного потока (опционально)
+
+**Обязательно покрывай:**
+- ✅ Happy path (основной сценарий)
+- ✅ Edge cases (граничные случаи)
+- ✅ Error handling (обработка ошибок)
+- ✅ Validation (валидация входных данных)
+
+---
+
+## Лучшие практики Python 3.12
+
+### Modern Type Hints
+
+```python
+# ✅ Правильно (Python 3.12)
+def process(items: list[str]) -> dict[str, int]:
+    pass
+
+def get_user(user_id: int) -> User | None:
+    pass
+
+# ❌ Устарело (Python 3.9)
+from typing import List, Dict, Optional
+
+def process(items: List[str]) -> Dict[str, int]:
+    pass
+
+def get_user(user_id: int) -> Optional[User]:
+    pass
+```
+
+### Protocol вместо ABC (для интерфейсов)
+
+```python
+# ✅ Правильно (структурная типизация)
+from typing import Protocol, runtime_checkable
+
+@runtime_checkable
+class Tool(Protocol):
+    def get_schema(self) -> dict: ...
+    async def execute(self, **kwargs) -> str: ...
+
+# Проверка в runtime
+assert isinstance(wiki_tool, Tool)
+
+# ❌ Избегай лишних ABC (для простых случаев)
+from abc import ABC, abstractmethod
+
+class Tool(ABC):
+    @abstractmethod
+    def get_schema(self) -> dict:
+        pass
+```
+
+### Pathlib вместо os.path
+
+```python
+# ✅ Правильно
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).parent.parent
+config_file = PROJECT_ROOT / ".env"
+
+if config_file.exists():
+    ...
+
+# ❌ Устарело
+import os
+
+PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
+config_file = os.path.join(PROJECT_ROOT, ".env")
+
+if os.path.exists(config_file):
+    ...
+```
+
+### Современный match-case (Python 3.10+)
+
+```python
+# ✅ Используй match-case для множественных условий
+match tool_name:
+    case "search_wikipedia":
+        return await self.wikipedia_tool.execute(**args)
+    case "get_current_datetime":
+        return self.datetime_tool.execute(**args)
+    case "web_search":
+        return await self.websearch_tool.execute(**args)
+    case _:
+        return f"Unknown tool: {tool_name}"
+
+# Вместо if-elif-else для 3+ вариантов
+```
+
+### Dataclasses и Pydantic
+
+```python
+# ✅ Pydantic для валидации
+from pydantic import BaseModel, Field
+
+class Config(BaseModel):
+    api_key: str = Field(..., min_length=10)
+    timeout: float = Field(default=30.0, ge=1.0)
+
+# ✅ Dataclass для простых структур
+from dataclasses import dataclass
+
+@dataclass
+class Point:
+    x: float
+    y: float
+
+# ❌ Не используй простые dict/class для структур данных
+```
+
+### Async context managers
+
+```python
+# ✅ Правильно
+async with httpx.AsyncClient() as client:
+    response = await client.get(url)
+
+# ✅ Собственный async context manager
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def managed_resource():
+    resource = await acquire()
+    try:
+        yield resource
+    finally:
+        await release(resource)
+```
+
+### F-strings для форматирования
+
+```python
+# ✅ Правильно
+logger.info(f"User {user_id} sent message: {text[:50]}")
+
+# ✅ Многострочные f-strings
+message = (
+    f"Hello {name}!\n"
+    f"Your balance: {balance:.2f}\n"
+    f"Status: {status}"
+)
+
+# ❌ Устарело
+logger.info("User %s sent message: %s" % (user_id, text[:50]))
+logger.info("User {} sent message: {}".format(user_id, text[:50]))
+```
+
+### Walrus operator (:=)
+
+```python
+# ✅ Используй := для упрощения кода
+if (result := expensive_computation()) is not None:
+    process(result)
+
+# Вместо
+result = expensive_computation()
+if result is not None:
+    process(result)
+```
+
+---
+
+## SOLID принципы в Python
+
+### S - Single Responsibility Principle
+
+```python
+# ✅ Правильно - каждый класс делает одно
+class OpenAIClient:
+    """Только взаимодействие с OpenAI API."""
+    async def create_completion(self, messages, tools):
+        ...
+
+class ToolOrchestrator:
+    """Только управление tool calling."""
+    async def process_with_tools(self, messages):
+        ...
+
+# ❌ Неправильно - класс делает слишком много
+class LLMClient:
+    """HTTP клиент + OpenAI + Tool calling + Логика ограничений"""
+    ...
+```
+
+### O - Open/Closed Principle
+
+```python
+# ✅ Правильно - расширение через Protocol
+class Tool(Protocol):
+    def get_schema(self) -> dict: ...
+    async def execute(self, **kwargs) -> str: ...
+
+# Добавляем новый tool без изменения существующего кода
+class NewTool:
+    def get_schema(self) -> dict:
+        return {...}
+    
+    async def execute(self, **kwargs) -> str:
+        return "result"
+```
+
+### L - Liskov Substitution Principle
+
+```python
+# ✅ Правильно - все tools взаимозаменяемы
+def register_tool(tool: Tool) -> None:
+    tools.append(tool)
+
+register_tool(WikipediaTool())
+register_tool(DateTimeTool())
+register_tool(WebSearchTool())
+```
+
+### I - Interface Segregation Principle
+
+```python
+# ✅ Правильно - маленькие специфичные протоколы
+class Searchable(Protocol):
+    async def search(self, query: str) -> str: ...
+
+class Configurable(Protocol):
+    def configure(self, **kwargs) -> None: ...
+
+# ❌ Неправильно - большой интерфейс со всем
+class Tool(Protocol):
+    def search(self, query: str) -> str: ...
+    def configure(self, **kwargs) -> None: ...
+    def validate(self) -> bool: ...
+    def reset(self) -> None: ...
+    # ... много методов, не всем нужны
+```
+
+### D - Dependency Inversion Principle
+
+```python
+# ✅ Правильно - зависимость от абстракции (Protocol)
+class MessageHandler:
+    def __init__(self, llm: LLMClient, tools: list[Tool]):
+        self.llm = llm
+        self.tools = tools
+
+# ❌ Неправильно - зависимость от конкретных классов
+class MessageHandler:
+    def __init__(self, config: Config):
+        self.llm = SpecificLLMClient(config)  # хардкод
+        self.wikipedia = WikipediaTool()      # хардкод
+```
+
+---
+
+## DRY - Don't Repeat Yourself
+
+### Выносить в функции при дублировании > 2 раз
+
+```python
+# ✅ Правильно - функция для переиспользования
+def format_tool_schema(name: str, description: str, params: dict) -> dict:
+    return {
+        "type": "function",
+        "function": {
+            "name": name,
+            "description": description,
+            "parameters": params,
+        }
+    }
+
+# Использование
+schema1 = format_tool_schema("search", "Search...", {...})
+schema2 = format_tool_schema("datetime", "Get datetime...", {...})
+
+# ❌ Неправильно - копипаста
+schema1 = {
+    "type": "function",
+    "function": {
+        "name": "search",
+        "description": "Search...",
+        "parameters": {...}
+    }
+}
+schema2 = {
+    "type": "function",
+    "function": {
+        "name": "datetime",
+        "description": "Get datetime...",
+        "parameters": {...}
+    }
+}
+```
+
+### Magic numbers → Config
+
+```python
+# ✅ Правильно - константы в Config
+class Config(BaseSettings):
+    max_tool_iterations: int = Field(default=10)
+    max_websearch_calls: int = Field(default=2)
+
+# Использование
+for iteration in range(self.config.max_tool_iterations):
+    ...
+
+# ❌ Неправильно - хардкод
+for iteration in range(10):  # магическое число
+    ...
+```
+
+---
+
+## Обновленный чеклист для каждого файла
+
+Перед отправкой кода проверь:
+
+### Базовые требования
+- [ ] Type hints для всех аргументов и возвращаемых значений (Python 3.12 стиль)
+- [ ] Docstrings на русском для публичных методов
+- [ ] Логирование важных событий и ошибок (через logging)
+- [ ] Try/except для внешних вызовов (API, файлы)
+- [ ] Pydantic модели для всех структур данных
+
+### Качество кода
+- [ ] Юнит-тесты для критичной логики
+- [ ] SOLID принципы соблюдены (SRP особенно важен)
+- [ ] DRY - нет дублирования > 2 раз
+- [ ] Magic numbers вынесены в Config
+- [ ] Методы < 40 строк
+- [ ] Класс решает одну задачу
+
+### Инструменты
+- [ ] `make format` выполнен (ruff format)
+- [ ] `make lint` проходит (ruff check)
+- [ ] `make type-check` проходит (mypy, если настроен)
+- [ ] `make test` проходит с >= 85% coverage
+
+---
+
+**Версия**: 2.0  
+**Дата**: 11 октября 2025  
+**Обновление**: Добавлены требования к quality tools, best practices Python 3.12, SOLID/DRY принципы  
+**Принцип**: KISS + SOLID + DRY + Quality = Maintainable Code
 
