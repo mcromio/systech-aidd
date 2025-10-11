@@ -53,9 +53,9 @@ async def test_register_handlers(config, message_handler):
         bot.register_handlers()
 
         # Assert
-        # Проверяем что register вызывался 4 раза
-        # (/start, /help, /reset, handle_message)
-        assert mock_register.call_count == 4
+        # Проверяем что register вызывался 5 раз
+        # (/start, /help, /reset, /role, handle_message)
+        assert mock_register.call_count == 5
 
 
 @pytest.mark.asyncio

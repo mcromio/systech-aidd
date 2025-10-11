@@ -1,8 +1,8 @@
 # Техническое видение проекта LLM-ассистент
 
-> Дата создания: 10 октября 2025  
-> Последнее обновление: 11 октября 2025  
-> Версия: 2.0  
+> Дата создания: 10 октября 2025
+> Последнее обновление: 11 октября 2025
+> Версия: 2.0
 > Принцип: KISS - максимальная простота для специализированного ИИ-продукта
 
 ---
@@ -345,24 +345,24 @@ from pathlib import Path
 
 class Config(BaseSettings):
     """Конфигурация приложения."""
-    
+
     telegram_bot_token: str
     openai_api_key: str
     openai_proxy_url: str
     openai_timeout: float = 30.0
     openai_model: str = "gpt-4o-mini"
-    
+
     # Роль бота
     system_prompt_file: str = "prompts/default.txt"
     role_name: str = "AI Assistant"
     role_description: str = "Универсальный ИИ-ассистент"
-    
+
     max_context_messages: int = 10
     log_level: str = "INFO"
-    
+
     # Загруженный системный промпт (из файла)
     system_prompt: str = ""
-    
+
     def model_post_init(self, __context) -> None:
         """Загрузка системного промпта из файла после инициализации."""
         prompt_path = Path(self.system_prompt_file)
@@ -370,7 +370,7 @@ class Config(BaseSettings):
             self.system_prompt = prompt_path.read_text(encoding="utf-8")
         else:
             raise FileNotFoundError(f"System prompt file not found: {self.system_prompt_file}")
-    
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
@@ -383,7 +383,7 @@ from pydantic import BaseModel
 
 class Message(BaseModel):
     """Сообщение в диалоге."""
-    
+
     role: Literal["user", "assistant", "system"]
     content: str
 ```
@@ -395,18 +395,18 @@ from pydantic import BaseModel
 
 class UserContext(BaseModel):
     """Контекст диалога пользователя."""
-    
+
     user_id: int
     messages: list[Message] = []
-    
+
     def add_message(self, role: str, content: str) -> None:
         """Добавить сообщение в историю."""
         self.messages.append(Message(role=role, content=content))
-    
+
     def get_messages(self, limit: int) -> list[Message]:
         """Получить последние N сообщений."""
         return self.messages[-limit:] if limit > 0 else self.messages
-    
+
     def clear(self) -> None:
         """Очистить историю."""
         self.messages = []
@@ -523,7 +523,7 @@ class LLMClient:
         """Инициализация LLM клиента."""
         self.config = config
         self.wikipedia_tool = wikipedia_tool
-        
+
         self.client = AsyncOpenAI(
             api_key=config.openai_api_key,
             http_client=httpx.AsyncClient(
@@ -531,7 +531,7 @@ class LLMClient:
                 timeout=config.openai_timeout
             )
         )
-        
+
         self.tools = self._get_tools_schema()
 ```
 
@@ -541,7 +541,7 @@ class LLMClient:
 async def get_response(self, messages: list[Message]) -> str | None:
     """
     Получить ответ от LLM.
-    
+
     Обрабатывает function calling автоматически в цикле.
     """
     try:
@@ -550,7 +550,7 @@ async def get_response(self, messages: list[Message]) -> str | None:
             {"role": "system", "content": self.config.system_prompt},
             *[msg.model_dump() for msg in messages]
         ]
-        
+
         # Основной цикл обработки (может быть несколько tool calls)
         max_iterations = 5
         for _ in range(max_iterations):
@@ -561,16 +561,16 @@ async def get_response(self, messages: list[Message]) -> str | None:
                 temperature=0.7,
                 max_tokens=2000
             )
-            
+
             message = response.choices[0].message
-            
+
             # Если нет tool calls - возвращаем ответ
             if not message.tool_calls:
                 return message.content
-            
+
             # Обрабатываем tool calls
             request_messages.append(message)
-            
+
             for tool_call in message.tool_calls:
                 tool_response = await self._execute_tool(tool_call)
                 request_messages.append({
@@ -578,9 +578,9 @@ async def get_response(self, messages: list[Message]) -> str | None:
                     "tool_call_id": tool_call.id,
                     "content": tool_response
                 })
-        
+
         return "Превышен лимит итераций обработки запроса."
-        
+
     except Exception as e:
         logger.error(f"Ошибка при обращении к LLM: {e}")
         return None
@@ -593,13 +593,13 @@ async def _execute_tool(self, tool_call) -> str:
     """Выполнить вызов инструмента."""
     function_name = tool_call.function.name
     arguments = json.loads(tool_call.function.arguments)
-    
+
     if function_name == "search_wikipedia":
         return await self.wikipedia_tool.search(
             query=arguments["query"],
             language=arguments.get("language", "ru")
         )
-    
+
     return "Неизвестный инструмент"
 ```
 
@@ -642,7 +642,7 @@ from typing import Optional
 
 class WikipediaTool:
     """Инструмент для поиска информации в Wikipedia."""
-    
+
     def __init__(self, user_agent: str = "LLM-Assistant-Bot/1.0"):
         """Инициализация Wikipedia клиента."""
         self.wiki_ru = wikipediaapi.Wikipedia(
@@ -653,33 +653,33 @@ class WikipediaTool:
             language='en',
             user_agent=user_agent
         )
-    
+
     async def search(self, query: str, language: str = "ru") -> str:
         """
         Поиск статьи в Wikipedia.
-        
+
         Args:
             query: Поисковый запрос
             language: Язык (ru/en)
-            
+
         Returns:
             Краткое содержание статьи или сообщение об ошибке
         """
         try:
             wiki = self.wiki_ru if language == "ru" else self.wiki_en
             page = wiki.page(query)
-            
+
             if not page.exists():
                 return f"Статья '{query}' не найдена в Wikipedia ({language})."
-            
+
             # Возвращаем summary (первый абзац), макс 500 символов
             summary = page.summary[:500]
-            
+
             if len(page.summary) > 500:
                 summary += "..."
-            
+
             return f"{summary}\n\nИсточник: {page.fullurl}"
-            
+
         except Exception as e:
             logger.error(f"Ошибка поиска в Wikipedia: {e}")
             return f"Ошибка при поиске в Wikipedia: {str(e)}"
@@ -773,9 +773,9 @@ dependencies = [
 ```
 User: /start
 Bot:  Привет! Я специализированный ИИ-ассистент с доступом к Wikipedia.
-      
+
       Задавайте мне вопросы, и я постараюсь помочь!
-      
+
       Доступные команды:
       /help - показать справку
       /role - узнать мою роль
@@ -790,11 +790,11 @@ Bot:  Здравствуйте! У меня всё отлично, спасиб�
 
 User: Напиши функцию на Python для сортировки списка
 Bot:  Конечно! Вот простая функция для сортировки:
-      
+
       def sort_list(items: list) -> list:
           """Сортировка списка."""
           return sorted(items)
-      
+
       Использование: result = sort_list([3, 1, 2])
 ```
 
@@ -803,16 +803,16 @@ Bot:  Конечно! Вот простая функция для сортиро
 ```
 User: Кто такой Александр Пушкин?
 Bot:  [LLM решает использовать Wikipedia tool]
-      
-      Александр Сергеевич Пушкин (1799-1837) — русский поэт, драматург 
-      и прозаик, заложивший основы русского реалистического направления, 
+
+      Александр Сергеевич Пушкин (1799-1837) — русский поэт, драматург
+      и прозаик, заложивший основы русского реалистического направления,
       критик и теоретик литературы, историк, публицист...
-      
+
       Источник: https://ru.wikipedia.org/wiki/Пушкин
 
 User: В каком году он родился?
 Bot:  [Использует контекст предыдущего ответа]
-      
+
       Александр Пушкин родился в 1799 году.
 ```
 
@@ -834,9 +834,9 @@ User: /role
 Bot:  🤖 Моя роль
 
       Название: AI Assistant
-      
+
       Описание: Универсальный ИИ-ассистент
-      
+
       Я специализируюсь на выполнении конкретных задач в рамках своей роли.
       Системный промпт загружен из: prompts/default.txt
 ```
@@ -847,15 +847,15 @@ User: /role
 Bot:  🤖 Моя роль
 
       Название: IT Expert Consultant
-      
+
       Описание: Профессиональный IT-консультант
-      
+
       Я специализируюсь на:
       • Консультациях по IT-технологиям
       • Решении технических проблем
       • Архитектурных решениях
       • Code review и best practices
-      
+
       Системный промпт: prompts/it_consultant.txt
 ```
 
@@ -864,15 +864,15 @@ Bot:  🤖 Моя роль
 ```
 User: /help
 Bot:  📖 Справка по боту
-      
+
       Я — специализированный ИИ-ассистент на базе GPT модели с доступом к Wikipedia.
-      
+
       Возможности:
       • Отвечаю на вопросы в рамках своей роли
       • Помогаю с кодом
       • Ищу информацию в Wikipedia
       • Помню контекст диалога
-      
+
       Команды:
       /start - начать работу
       /help - эта справка
@@ -885,7 +885,7 @@ Bot:  📖 Справка по боту
 ```
 User: Расскажи про квантовую физику
 Bot:  [OpenAI API недоступен]
-      
+
       ❌ Произошла ошибка при обработке запроса. Попробуйте позже.
 
 [В логах]:
@@ -897,10 +897,10 @@ ERROR: Ошибка при обращении к LLM: Connection timeout
 ```
 User: Расскажи про несуществующую_статью_12345
 Bot:  [Wikipedia не нашла статью]
-      
-      Я попытался найти информацию в Wikipedia, но статья 
-      'несуществующую_статью_12345' не найдена. 
-      
+
+      Я попытался найти информацию в Wikipedia, но статья
+      'несуществующую_статью_12345' не найдена.
+
       Могу ли помочь чем-то еще?
 ```
 
@@ -911,7 +911,7 @@ Bot:  [Wikipedia не нашла статью]
 
 User: Что я спрашивал в самом начале?
 Bot:  [ContextManager хранит только последние N сообщений]
-      
+
       К сожалению, я помню только последние 10 сообщений нашего диалога.
       Используйте /reset чтобы начать новый разговор.
 ```
@@ -972,16 +972,16 @@ from pathlib import Path
 
 class Config(BaseSettings):
     """Конфигурация приложения."""
-    
+
     # Telegram
     telegram_bot_token: str = Field(..., description="Токен Telegram бота")
-    
+
     # OpenAI
     openai_api_key: str = Field(..., description="API ключ OpenAI")
     openai_proxy_url: str = Field(..., description="URL прокси для OpenAI")
     openai_timeout: float = Field(default=30.0, ge=1.0, description="Таймаут для запросов к OpenAI (секунды)")
     openai_model: str = Field(default="gpt-4o-mini", description="Модель LLM")
-    
+
     # Роль бота (NEW: ИИ-продукт)
     system_prompt_file: str = Field(
         default="prompts/default.txt",
@@ -995,7 +995,7 @@ class Config(BaseSettings):
         default="Универсальный ИИ-ассистент",
         description="Краткое описание роли"
     )
-    
+
     # Поведение
     max_context_messages: int = Field(
         default=10,
@@ -1003,19 +1003,19 @@ class Config(BaseSettings):
         le=50,
         description="Максимум сообщений в истории"
     )
-    
+
     # Логирование
     log_level: str = Field(default="INFO", description="Уровень логирования")
-    
+
     # Загруженный системный промпт (из файла)
     system_prompt: str = ""
-    
+
     model_config = {
         "env_file": ".env",
         "env_file_encoding": "utf-8",
         "case_sensitive": False
     }
-    
+
     def model_post_init(self, __context) -> None:
         """Загрузка системного промпта из файла после инициализации."""
         prompt_path = Path(self.system_prompt_file)
@@ -1023,7 +1023,7 @@ class Config(BaseSettings):
             self.system_prompt = prompt_path.read_text(encoding="utf-8")
         else:
             raise FileNotFoundError(f"System prompt file not found: {self.system_prompt_file}")
-    
+
     def validate_config(self) -> None:
         """Валидация конфигурации при старте."""
         if not self.telegram_bot_token:
@@ -1043,10 +1043,10 @@ from src.config import Config
 def main():
     # Загрузка конфигурации
     config = Config()
-    
+
     # Валидация
     config.validate_config()
-    
+
     # Использование
     logger.info(f"Запуск бота с моделью: {config.openai_model}")
 ```
@@ -1104,11 +1104,11 @@ import sys
 
 def setup_logging(log_level: str = "INFO") -> None:
     """Настройка логирования приложения."""
-    
+
     # Формат логов
     log_format = "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
     date_format = "%Y-%m-%d %H:%M:%S"
-    
+
     # Базовая конфигурация
     logging.basicConfig(
         level=getattr(logging, log_level.upper()),
@@ -1118,7 +1118,7 @@ def setup_logging(log_level: str = "INFO") -> None:
             logging.StreamHandler(sys.stdout)
         ]
     )
-    
+
     # Отключаем лишние логи от библиотек
     logging.getLogger("httpx").setLevel(logging.WARNING)
     logging.getLogger("httpcore").setLevel(logging.WARNING)
@@ -1157,9 +1157,9 @@ logger = logging.getLogger(__name__)
 async def handle_message(message: Message):
     user_id = message.from_user.id
     text = message.text
-    
+
     logger.info(f"Сообщение от пользователя {user_id}: {text[:50]}...")
-    
+
     try:
         response = await llm_client.get_response(history)
         logger.info(f"Ответ пользователю {user_id}: {response[:50]}...")
@@ -1175,7 +1175,7 @@ logger = logging.getLogger(__name__)
 
 async def get_response(self, messages: list[Message]) -> str | None:
     logger.debug(f"Запрос к LLM: {len(messages)} сообщений")
-    
+
     try:
         response = await self.client.chat.completions.create(...)
         logger.info("Получен ответ от LLM")
@@ -1193,7 +1193,7 @@ logger = logging.getLogger(__name__)
 
 async def search(self, query: str, language: str = "ru") -> str:
     logger.info(f"Поиск в Wikipedia: '{query}' ({language})")
-    
+
     try:
         page = wiki.page(query)
         if page.exists():
@@ -1375,7 +1375,7 @@ services:
       dockerfile: Dockerfile
     container_name: llm-assistant-bot
     restart: unless-stopped
-    
+
     environment:
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
@@ -1384,11 +1384,11 @@ services:
       - SYSTEM_PROMPT=${SYSTEM_PROMPT}
       - MAX_CONTEXT_MESSAGES=${MAX_CONTEXT_MESSAGES:-10}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
-    
+
     # Монтирование .env (опционально, переменные можно задать выше)
     env_file:
       - .env
-    
+
     # Ограничения ресурсов
     deploy:
       resources:
@@ -1398,14 +1398,14 @@ services:
         reservations:
           cpus: '0.5'
           memory: 256M
-    
+
     # Логирование
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
-    
+
     # Health check
     healthcheck:
       test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
@@ -1940,14 +1940,14 @@ exclude_lines = [
 
 ### Критерий готовности MVP
 
-✅ Бот запускается локально и в Docker  
-✅ Обрабатывает команды /start, /help, /reset  
-✅ Отвечает на вопросы через OpenAI API  
-✅ Использует Wikipedia для поиска информации  
-✅ Хранит контекст диалога  
-✅ Логирует все операции  
-✅ Покрыт базовыми тестами (>70% coverage)  
-✅ Задокументирован (README, vision)  
+✅ Бот запускается локально и в Docker
+✅ Обрабатывает команды /start, /help, /reset
+✅ Отвечает на вопросы через OpenAI API
+✅ Использует Wikipedia для поиска информации
+✅ Хранит контекст диалога
+✅ Логирует все операции
+✅ Покрыт базовыми тестами (>70% coverage)
+✅ Задокументирован (README, vision)
 
 ### Фаза 6: Technical Debt & Качество (Refactoring Branch)
 **После завершения MVP - работа по [tasklist_tech_dept.md](tasklist_tech_dept.md)**
@@ -2032,8 +2032,8 @@ src/
 
 ---
 
-**Документ завершен**: 10 октября 2025  
-**Последнее обновление**: 11 октября 2025  
-**Версия**: 2.0 (ИИ-продукт с ролью)  
+**Документ завершен**: 10 октября 2025
+**Последнее обновление**: 11 октября 2025
+**Версия**: 2.0 (ИИ-продукт с ролью)
 **Статус**: Готово к реализации ✅ (MVP + Tech Debt Roadmap + Role Management)
 

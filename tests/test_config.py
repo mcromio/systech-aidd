@@ -1,5 +1,6 @@
 """Тесты для конфигурации."""
 
+
 import pytest
 from pydantic import ValidationError
 
@@ -104,3 +105,57 @@ def test_validate_config_missing_telegram_token():
     # Act & Assert
     with pytest.raises(ValueError, match="TELEGRAM_BOT_TOKEN обязателен"):
         config.validate_config()
+
+
+# === TDD: Новые тесты для загрузки системного промпта из файла ===
+
+
+def test_config_loads_system_prompt_from_file():
+    """Тест загрузки системного промпта из файла."""
+    # Arrange - config с дефолтным путем к промпту
+    config = Config(
+        telegram_bot_token="123:ABC",
+        openai_api_key="sk-test",
+        openai_proxy_url="https://proxy.test.com",
+        system_prompt_file="prompts/default.txt",
+    )
+
+    # Act
+    # system_prompt должен быть загружен автоматически в model_post_init
+
+    # Assert
+    assert config.system_prompt is not None
+    assert len(config.system_prompt) > 0
+    assert "ИИ-ассистент" in config.system_prompt
+    assert config.system_prompt_file == "prompts/default.txt"
+
+
+def test_config_raises_error_if_prompt_file_missing():
+    """Тест ошибки при отсутствии файла системного промпта."""
+    # Arrange - указываем несуществующий файл
+    # Act & Assert
+    with pytest.raises(FileNotFoundError, match="System prompt file not found"):
+        Config(
+            telegram_bot_token="123:ABC",
+            openai_api_key="sk-test",
+            openai_proxy_url="https://proxy.test.com",
+            system_prompt_file="prompts/nonexistent.txt",
+        )
+
+
+def test_config_has_role_name_and_description():
+    """Тест наличия полей role_name и role_description в конфигурации."""
+    # Arrange & Act
+    config = Config(
+        telegram_bot_token="123:ABC",
+        openai_api_key="sk-test",
+        openai_proxy_url="https://proxy.test.com",
+        role_name="Test Assistant",
+        role_description="Тестовый ассистент для проверки",
+    )
+
+    # Assert
+    assert config.role_name == "Test Assistant"
+    assert config.role_description == "Тестовый ассистент для проверки"
+    assert hasattr(config, "role_name")
+    assert hasattr(config, "role_description")

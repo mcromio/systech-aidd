@@ -86,6 +86,20 @@ class Config(BaseSettings):
         description="User agent для Wikipedia API",
     )
 
+    # Роль бота (TDD: Iteration 7)
+    system_prompt_file: str = Field(
+        default="prompts/default.txt",
+        description="Путь к файлу с системным промптом",
+    )
+    role_name: str = Field(
+        default="AI Assistant",
+        description="Название роли бота",
+    )
+    role_description: str = Field(
+        default="Универсальный ИИ-ассистент",
+        description="Краткое описание роли",
+    )
+
     # Поведение
     system_prompt: str = Field(
         default=(
@@ -147,6 +161,15 @@ class Config(BaseSettings):
                         os.environ[key] = env_vars[key]  # type: ignore[assignment]
 
         super().__init__(**kwargs)  # type: ignore[arg-type]
+
+    def model_post_init(self, __context: object) -> None:
+        """Загрузка системного промпта из файла после инициализации (TDD: Iteration 7)."""
+        prompt_path = Path(self.system_prompt_file)
+        if prompt_path.exists():
+            self.system_prompt = prompt_path.read_text(encoding="utf-8")
+            logger.info(f"Системный промпт загружен из файла: {self.system_prompt_file}")
+        else:
+            raise FileNotFoundError(f"System prompt file not found: {self.system_prompt_file}")
 
     def validate_config(self) -> None:
         """Валидация конфигурации при старте."""

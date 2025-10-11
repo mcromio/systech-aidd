@@ -50,6 +50,7 @@ class MessageHandler:
             "Я могу отвечать на ваши вопросы и искать информацию в Wikipedia.\n\n"
             "Доступные команды:\n"
             "/help - справка\n"
+            "/role - узнать мою роль\n"
             "/reset - очистить историю диалога"
         )
 
@@ -77,6 +78,7 @@ class MessageHandler:
             "Команды:\n"
             "/start - начать диалог\n"
             "/help - эта справка\n"
+            "/role - узнать мою роль\n"
             "/reset - очистить историю диалога"
         )
 
@@ -98,6 +100,28 @@ class MessageHandler:
 
         reset_text = "🗑 История диалога очищена. Начнем сначала!"
         await message.answer(reset_text)
+
+    async def handle_role(self, message: types.Message) -> None:
+        """
+        Обработка команды /role (отображение роли бота) - TDD: Iteration 7.
+
+        Args:
+            message: Сообщение от пользователя
+        """
+        if not message.from_user:
+            return
+        user_id = message.from_user.id
+        logger.info(f"Команда /role от пользователя {user_id}")
+
+        role_info = (
+            f"🤖 Моя роль\n\n"
+            f"Название: {self.config.role_name}\n\n"
+            f"Описание: {self.config.role_description}\n\n"
+            f"Я специализируюсь на выполнении конкретных задач в рамках своей роли.\n"
+            f"Системный промпт: {self.config.system_prompt_file}"
+        )
+
+        await message.answer(role_info)
 
     async def handle_message(self, message: types.Message) -> None:
         """

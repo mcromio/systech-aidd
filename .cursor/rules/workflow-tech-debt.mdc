@@ -1,10 +1,10 @@
 ---
-alwaysApply: true
+alwaysApply: false
 ---
 # Development Workflow - Technical Debt
 
-> Правила выполнения работ по [tasklist_tech_dept.md](tasklist_tech_dept.md)  
-> Для рефакторинга и улучшения качества кода после code review  
+> Правила выполнения работ по [tasklist_tech_dept.md](tasklist_tech_dept.md)
+> Для рефакторинга и улучшения качества кода после code review
 > Все соглашения из [conventions.mdc](../.cursor/rules/conventions.mdc) + дополнительные требования к качеству
 
 ---
@@ -524,8 +524,8 @@ TechDebt-N завершена ✅
 
 ---
 
-**Версия**: 1.0  
-**Дата**: 11 октября 2025  
-**Принцип**: KISS + SOLID + DRY = Quality Code  
+**Версия**: 1.0
+**Дата**: 11 октября 2025
+**Принцип**: KISS + SOLID + DRY = Quality Code
 **Цель**: Превратить tech debt в качественный, поддерживаемый код
 

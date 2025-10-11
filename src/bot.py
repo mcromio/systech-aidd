@@ -45,6 +45,10 @@ class TelegramBot:
             self.message_handler.handle_reset,
             Command(commands=["reset"]),
         )
+        self.dp.message.register(
+            self.message_handler.handle_role,
+            Command(commands=["role"]),
+        )
 
         # Текстовые сообщения (все что не команды)
         self.dp.message.register(self.message_handler.handle_message)
