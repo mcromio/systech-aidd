@@ -1,0 +1,230 @@
+---
+alwaysApply: true
+---
+# QA & Testing Conventions
+
+> Правила TDD и тестирования для Python проекта
+> Senior QA Automation Engineer guidelines
+
+---
+
+## TDD Принципы
+
+### Red-Green-Refactor
+1. **RED**: Напиши падающий тест
+2. **GREEN**: Минимум кода для прохождения теста
+3. **REFACTOR**: Улучши код, тесты остаются зелеными
+
+### Что тестировать
+✅ **Тестируй**:
+- Публичные API/методы
+- Граничные условия (edge cases)
+- Критическую бизнес-логику
+- Обработку ошибок
+
+❌ **НЕ тестируй**:
+- Приватные методы (тестируются через публичные)
+- Тривиальные геттеры/сеттеры
+- Сторонние библиотеки
+- Константы и конфиги
+
+---
+
+## Структура тестов
+
+### Именование
+```python
+# test_<module_name>.py
+def test_<function>_<scenario>_<expected_result>():
+    """Краткое описание проверки."""
+```
+
+### Паттерн AAA (Arrange-Act-Assert)
+```python
+def test_parse_command_valid_input_returns_dict():
+    """Парсинг корректной команды возвращает словарь."""
+    # Arrange
+    command = "/start"
+
+    # Act
+    result = parse_command(command)
+
+    # Assert
+    assert result == {"command": "start"}
+```
+
+### Одна проверка = один тест
+```python
+# ❌ Плохо
+def test_calculator():
+    assert add(2, 3) == 5
+    assert subtract(5, 3) == 2
+    assert multiply(2, 3) == 6
+
+# ✅ Хорошо
+def test_add_two_positive_numbers_returns_sum():
+    assert add(2, 3) == 5
+
+def test_subtract_returns_difference():
+    assert subtract(5, 3) == 2
+```
+
+---
+
+## Pytest правила
+
+### Fixtures
+```python
+@pytest.fixture
+def mock_config():
+    """Фикстура для Config."""
+    return Config(api_key="test_key", bot_token="test_token")
+
+# Переиспользуй, не дублируй
+```
+
+### Параметризация для похожих кейсов
+```python
+@pytest.mark.parametrize("input,expected", [
+    ("hello", "HELLO"),
+    ("", ""),
+    ("Test", "TEST"),
+])
+def test_uppercase_converts_string(input, expected):
+    assert uppercase(input) == expected
+```
+
+### Моки только где нужно
+```python
+# ✅ Мокай внешние зависимости (API, DB, сеть)
+@patch("requests.get")
+def test_api_call(mock_get):
+    mock_get.return_value.json.return_value = {"data": "value"}
+    result = fetch_data()
+    assert result == {"data": "value"}
+
+# ❌ НЕ мокай простую логику
+```
+
+---
+
+## Требования к тестам
+
+### Качество
+- **Изолированность**: каждый тест независим
+- **Повторяемость**: одинаковый результат при каждом запуске
+- **Быстрота**: тесты выполняются за секунды (не минуты)
+- **Читаемость**: тест = документация к коду
+
+### Покрытие
+- Стремись к **80%+ coverage** критичного кода
+- Не гонись за 100% ради метрики
+- Важнее качество тестов, а не количество
+
+### Async тесты
+```python
+@pytest.mark.asyncio
+async def test_async_handler_processes_message():
+    """Асинхронный обработчик корректно обрабатывает сообщение."""
+    handler = MessageHandler()
+    result = await handler.process("test")
+    assert result is not None
+```
+
+---
+
+## Антипаттерны
+
+### ❌ Избегай
+
+**1. Тесты с хрупкой логикой**
+```python
+# Плохо: тест зависит от времени/окружения
+def test_get_timestamp():
+    assert get_timestamp() == "2025-10-11"
+```
+
+**2. Избыточные проверки**
+```python
+# Плохо: проверяет очевидное
+def test_list_initialization():
+    my_list = []
+    assert isinstance(my_list, list)
+    assert len(my_list) == 0
+```
+
+**3. Тесты реализации вместо поведения**
+```python
+# Плохо: тестирует как, а не что
+def test_sort_calls_quicksort():
+    with patch("module.quicksort") as mock:
+        sort([3, 1, 2])
+        mock.assert_called_once()
+
+# Хорошо: тестирует результат
+def test_sort_returns_sorted_list():
+    assert sort([3, 1, 2]) == [1, 2, 3]
+```
+
+**4. Большие тестовые данные в коде**
+```python
+# Плохо: 100 строк тестовых данных в тесте
+# Хорошо: используй fixtures или файлы данных
+```
+
+---
+
+## Инструменты
+
+### Обязательные
+- `pytest` — фреймворк тестирования
+- `pytest-asyncio` — для async/await тестов
+- `pytest-cov` — покрытие кода
+- `pytest-mock` — удобные моки
+
+### Запуск
+```bash
+# Все тесты
+pytest
+
+# С покрытием
+pytest --cov=src --cov-report=html
+
+# Конкретный файл
+pytest tests/test_handlers.py
+
+# Конкретный тест
+pytest tests/test_handlers.py::test_process_message_valid_input
+
+# Verbose
+pytest -v
+```
+
+---
+
+## Чеклист перед коммитом
+
+- [ ] Все тесты проходят (`pytest`)
+- [ ] Новый код покрыт тестами (критичные сценарии)
+- [ ] Нет boilerplate/бессмысленных тестов
+- [ ] Тесты читаемы и понятны
+- [ ] Используются фикстуры для переиспользования
+- [ ] Моки применены только для внешних зависимостей
+- [ ] Следуешь принципам KISS, DRY
+
+---
+
+## Быстрые правила
+
+1. **Пиши тест ДО кода** (TDD)
+2. **Тестируй поведение, не реализацию**
+3. **Один тест = одна проверка**
+4. **Тесты должны быть проще продакшн кода**
+5. **Избегай copy-paste**: используй fixtures и параметризацию
+6. **Моки = только внешние зависимости**
+7. **Имена тестов = документация**
+8. **Если тест сложный, упрости код или разбей на части**
+
+---
+
+*Помни: хороший тест = уверенность в коде при рефакторинге*
