@@ -124,6 +124,22 @@ class Config(BaseSettings):
         description="Максимум сообщений в истории",
     )
 
+    # Database Configuration (S1: Persistent Storage)
+    database_url: str = Field(
+        default="postgresql+asyncpg://llm_user:llm_password_dev@localhost:5432/llm_assistant",
+        description="PostgreSQL connection URL",
+    )
+    database_pool_size: int = Field(
+        default=5,
+        ge=1,
+        le=50,
+        description="Размер connection pool",
+    )
+    database_echo: bool = Field(
+        default=False,
+        description="Логировать SQL запросы (для отладки)",
+    )
+
     # Логирование
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = Field(
         default="INFO",

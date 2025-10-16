@@ -96,7 +96,7 @@ class MessageHandler:
         user_id = message.from_user.id
         logger.info(f"Команда /reset от пользователя {user_id}")
 
-        self.context_manager.clear_history(user_id)
+        await self.context_manager.clear_history(user_id)
 
         reset_text = "🗑 История диалога очищена. Начнем сначала!"
         await message.answer(reset_text)
@@ -139,17 +139,17 @@ class MessageHandler:
 
         try:
             # Добавляем сообщение пользователя в контекст
-            self.context_manager.add_message(user_id, "user", user_text)
+            await self.context_manager.add_message(user_id, "user", user_text)
 
             # Получаем историю диалога
-            history = self.context_manager.get_history(user_id)
+            history = await self.context_manager.get_history(user_id)
 
             # Получаем ответ от LLM
             response = await self.llm_client.get_response(history)
 
             if response:
                 # Добавляем ответ ассистента в контекст
-                self.context_manager.add_message(user_id, "assistant", response)
+                await self.context_manager.add_message(user_id, "assistant", response)
 
                 # Отправляем ответ пользователю
                 await message.answer(response)

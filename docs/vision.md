@@ -114,10 +114,12 @@ systech-aidd_mcr/
 ├── docs/
 │   ├── idea.md              # Концепция проекта
 │   ├── vision.md            # Техническое видение (этот документ)
-│   ├── tasklist.md          # Основной tasklist (MVP)
-│   ├── tasklist_tech_dept.md # ← NEW: Tech debt roadmap
+│   ├── roadmap.md           # ← NEW: Роадмап проекта по спринтам
+│   ├── tasklists/           # ← NEW: Тасклисты по спринтам
+│   │   ├── tasklist-s0.md          # MVP спринта S0 (итерации 1-7)
+│   │   └── tasklist-techdebt-s0.md # Tech debt спринта S0 (итерации 1-6)
 │   ├── workflow.md          # Workflow для основной разработки
-│   └── workflow_tech_debt.md # ← NEW: Workflow для tech debt
+│   └── workflow_tech_debt.md # Workflow для tech debt
 │
 ├── .cursor/
 │   └── rules/
@@ -1950,7 +1952,7 @@ exclude_lines = [
 ✅ Задокументирован (README, vision)
 
 ### Фаза 6: Technical Debt & Качество (Refactoring Branch)
-**После завершения MVP - работа по [tasklist_tech_dept.md](tasklist_tech_dept.md)**
+**После завершения MVP - работа по [tasklist-techdebt-s0.md](tasklists/tasklist-techdebt-s0.md)**
 
 1. **TechDebt-1**: Исправление падающих тестов
    - Адаптация тестов после рефакторинга

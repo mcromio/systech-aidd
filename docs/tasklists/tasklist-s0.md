@@ -482,11 +482,11 @@ make docker-logs
 
 ## 📚 Ссылки
 
-- [vision.md](vision.md) - техническое видение (v2.0 - ИИ-продукт с ролью)
-- [idea.md](idea.md) - концепция проекта (v2.0 - ИИ-продукт с ролью)
-- [conventions.md](conventions.md) - правила разработки
-- **[.cursor/rules/qa_conventions.mdc](../.cursor/rules/qa_conventions.mdc)** - TDD и тестирование
-- **[.cursor/rules/workflow_tdd.mdc](../.cursor/rules/workflow_tdd.mdc)** - TDD workflow (RED-GREEN-REFACTOR)
+- [vision.md](../vision.md) - техническое видение (v2.0 - ИИ-продукт с ролью)
+- [idea.md](../idea.md) - концепция проекта (v2.0 - ИИ-продукт с ролью)
+- [conventions.md](../conventions.md) - правила разработки
+- **[.cursor/rules/qa_conventions.mdc](../../.cursor/rules/qa_conventions.mdc)** - TDD и тестирование
+- **[.cursor/rules/workflow_tdd.mdc](../../.cursor/rules/workflow_tdd.mdc)** - TDD workflow (RED-GREEN-REFACTOR)
 
 ---
 

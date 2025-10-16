@@ -1,0 +1,90 @@
+=================================================
+  ER-диаграмма БД LLM Assistant (ASCII art)
+=================================================
+
+Дата: 16 октября 2025
+Спринт: S1 - Персистентное хранение данных
+
+
+┌───────────────────────────────────────────────┐
+│                    users                      │
+├───────────────────────────────────────────────┤
+│ PK │ id                    SERIAL             │
+│ U  │ telegram_id           BIGINT             │◄──────┐
+│    │ username              VARCHAR(255) NULL  │       │
+│    │ first_name            VARCHAR(255) NULL  │       │
+│    │ last_name             VARCHAR(255) NULL  │       │
+│    │ created_at            TIMESTAMPTZ        │       │
+│    │ last_seen_at          TIMESTAMPTZ NULL   │       │
+└───────────────────────────────────────────────┘       │
+                                                        │
+                                                        │ 1:N
+                                                        │
+┌────────────────────────────────────────────────┐      │
+│                   messages                     │      │
+├────────────────────────────────────────────────┤      │
+│ PK │ id                    SERIAL              │      │
+│ FK │ user_id               INTEGER             ├──────┘
+│    │ role                  VARCHAR(20)         │
+│    │                       CHECK('user','assistant','system')
+│    │ content               TEXT                │
+│    │ content_length        INTEGER             │
+│    │ created_at            TIMESTAMPTZ         │
+│    │ is_deleted            BOOLEAN DEFAULT FALSE
+│    │ deleted_at            TIMESTAMPTZ NULL    │
+└────────────────────────────────────────────────┘
+
+
+Индексы:
+=========
+
+users:
+------
+• idx_users_telegram_id (telegram_id) - UNIQUE
+
+messages:
+---------
+• idx_messages_user_id_created_at (user_id, created_at DESC)
+• idx_messages_is_deleted (is_deleted)
+
+
+Отношения (Relationships):
+===========================
+
+users ──< messages
+  │
+  └─── 1 user может иметь N messages
+       (one-to-many)
+
+
+Foreign Keys:
+=============
+
+messages.user_id → users.id
+  ON DELETE CASCADE
+  (при удалении user удаляются все его messages)
+
+
+Примечания:
+===========
+
+1. Soft Delete Strategy:
+   - is_deleted = TRUE вместо физического DELETE
+   - deleted_at заполняется при soft delete
+   - Все SELECT фильтруют WHERE is_deleted = FALSE
+
+2. Автоматические поля:
+   - created_at: DEFAULT NOW()
+   - content_length: вычисляется из LENGTH(content)
+
+3. Поле role (enum):
+   - 'user' - сообщение от пользователя
+   - 'assistant' - ответ LLM
+   - 'system' - системные сообщения (если нужны)
+
+4. TIMESTAMPTZ:
+   - Хранится в UTC
+   - Автоматическое преобразование time zones
+
+=================================================
+
