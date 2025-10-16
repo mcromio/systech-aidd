@@ -40,6 +40,8 @@ class MessageHandler:
         Args:
             message: Сообщение от пользователя
         """
+        if not message.from_user:
+            return
         user_id = message.from_user.id
         logger.info(f"Команда /start от пользователя {user_id}")
 
@@ -48,6 +50,7 @@ class MessageHandler:
             "Я могу отвечать на ваши вопросы и искать информацию в Wikipedia.\n\n"
             "Доступные команды:\n"
             "/help - справка\n"
+            "/role - узнать мою роль\n"
             "/reset - очистить историю диалога"
         )
 
@@ -60,6 +63,8 @@ class MessageHandler:
         Args:
             message: Сообщение от пользователя
         """
+        if not message.from_user:
+            return
         user_id = message.from_user.id
         logger.info(f"Команда /help от пользователя {user_id}")
 
@@ -73,6 +78,7 @@ class MessageHandler:
             "Команды:\n"
             "/start - начать диалог\n"
             "/help - эта справка\n"
+            "/role - узнать мою роль\n"
             "/reset - очистить историю диалога"
         )
 
@@ -85,13 +91,37 @@ class MessageHandler:
         Args:
             message: Сообщение от пользователя
         """
+        if not message.from_user:
+            return
         user_id = message.from_user.id
         logger.info(f"Команда /reset от пользователя {user_id}")
 
-        self.context_manager.clear_history(user_id)
+        await self.context_manager.clear_history(user_id)
 
         reset_text = "🗑 История диалога очищена. Начнем сначала!"
         await message.answer(reset_text)
+
+    async def handle_role(self, message: types.Message) -> None:
+        """
+        Обработка команды /role (отображение роли бота) - TDD: Iteration 7.
+
+        Args:
+            message: Сообщение от пользователя
+        """
+        if not message.from_user:
+            return
+        user_id = message.from_user.id
+        logger.info(f"Команда /role от пользователя {user_id}")
+
+        role_info = (
+            f"🤖 Моя роль\n\n"
+            f"Название: {self.config.role_name}\n\n"
+            f"Описание: {self.config.role_description}\n\n"
+            f"Я специализируюсь на выполнении конкретных задач в рамках своей роли.\n"
+            f"Системный промпт: {self.config.system_prompt_file}"
+        )
+
+        await message.answer(role_info)
 
     async def handle_message(self, message: types.Message) -> None:
         """
@@ -100,6 +130,8 @@ class MessageHandler:
         Args:
             message: Сообщение от пользователя
         """
+        if not message.from_user or not message.text:
+            return
         user_id = message.from_user.id
         user_text = message.text
 
@@ -107,17 +139,17 @@ class MessageHandler:
 
         try:
             # Добавляем сообщение пользователя в контекст
-            self.context_manager.add_message(user_id, "user", user_text)
+            await self.context_manager.add_message(user_id, "user", user_text)
 
             # Получаем историю диалога
-            history = self.context_manager.get_history(user_id)
+            history = await self.context_manager.get_history(user_id)
 
             # Получаем ответ от LLM
             response = await self.llm_client.get_response(history)
 
             if response:
                 # Добавляем ответ ассистента в контекст
-                self.context_manager.add_message(user_id, "assistant", response)
+                await self.context_manager.add_message(user_id, "assistant", response)
 
                 # Отправляем ответ пользователю
                 await message.answer(response)

@@ -1,9 +1,9 @@
 ---
-alwaysApply: true
+alwaysApply: false
 ---
 # Development Workflow
 
-> Правила выполнения работ по [tasklist.md](tasklist.md)  
+> Правила выполнения работ по [tasklist.md](tasklist.md)
 > Для code assistant'а, разрабатывающего бота по [vision.md](vision.md)
 
 ---
@@ -55,11 +55,11 @@ alwaysApply: true
 \`\`\`python
 class ClassName:
     """Docstring на русском."""
-    
+
     def __init__(self, config: Config):
         """Инициализация."""
         self.config = config
-    
+
     async def method1(self, arg: str) -> bool:
         """Описание метода."""
         # Логика
@@ -444,7 +444,7 @@ git commit -m "feat: Iteration 2 - ContextManager
 
 ---
 
-**Версия**: 1.0  
-**Дата**: 10 октября 2025  
+**Версия**: 1.0
+**Дата**: 10 октября 2025
 **Принцип**: KISS - Keep It Simple, Stupid
 

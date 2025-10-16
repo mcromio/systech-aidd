@@ -140,3 +140,44 @@ async def test_handle_message_exception(message_handler, mock_telegram_message, 
     mock_telegram_message.answer.assert_called_once()
     call_args = mock_telegram_message.answer.call_args[0][0]
     assert "ошибка" in call_args.lower()
+
+
+# === TDD: Новые тесты для команды /role ===
+
+
+@pytest.mark.asyncio
+async def test_handle_role_returns_role_info(message_handler, mock_telegram_message):
+    """Тест команды /role - возвращает информацию о роли."""
+    # Act
+    await message_handler.handle_role(mock_telegram_message)
+
+    # Assert
+    mock_telegram_message.answer.assert_called_once()
+    call_args = mock_telegram_message.answer.call_args[0][0]
+    assert "Моя роль" in call_args
+
+
+@pytest.mark.asyncio
+async def test_handle_role_includes_role_name(message_handler, mock_telegram_message):
+    """Тест команды /role - в ответе есть название роли."""
+    # Act
+    await message_handler.handle_role(mock_telegram_message)
+
+    # Assert
+    mock_telegram_message.answer.assert_called_once()
+    call_args = mock_telegram_message.answer.call_args[0][0]
+    # Проверяем что в ответе есть название роли из config
+    assert message_handler.config.role_name in call_args
+
+
+@pytest.mark.asyncio
+async def test_handle_role_includes_role_description(message_handler, mock_telegram_message):
+    """Тест команды /role - в ответе есть описание роли."""
+    # Act
+    await message_handler.handle_role(mock_telegram_message)
+
+    # Assert
+    mock_telegram_message.answer.assert_called_once()
+    call_args = mock_telegram_message.answer.call_args[0][0]
+    # Проверяем что в ответе есть описание роли из config
+    assert message_handler.config.role_description in call_args

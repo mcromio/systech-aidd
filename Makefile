@@ -33,6 +33,10 @@ lint: ## Проверить код линтером
 	@echo "$(GREEN)Проверка кода...$(NC)"
 	uv run ruff check src/ tests/
 
+type-check: ## Проверка типов с mypy
+	@echo "$(GREEN)Проверка типов...$(NC)"
+	uv run mypy src/
+
 format: ## Форматировать код
 	@echo "$(GREEN)Форматирование кода...$(NC)"
 	uv run ruff format src/ tests/
@@ -53,8 +57,74 @@ setup: ## Первоначальная настройка проекта
 	@echo "$(GREEN)Проект настроен!$(NC)"
 	@echo "Не забудьте создать .env файл на основе .env.example"
 
-check: lint test ## Проверка кода и тесты
+check: lint type-check test ## Проверка кода, типов и тесты
 
-all: clean format lint test ## Полная проверка проекта
+all: clean format lint type-check test ## Полная проверка проекта
 	@echo "$(GREEN)Все проверки пройдены!$(NC)"
+
+# === Database команды (S1: Persistent Storage) ===
+
+db-up: ## Запустить PostgreSQL в Docker
+	@echo "$(GREEN)Запуск PostgreSQL...$(NC)"
+	docker-compose -f docker-compose.dev.yml up -d postgres
+	@echo "Ожидание готовности БД..."
+	@sleep 5
+	@echo "$(GREEN)PostgreSQL запущен$(NC)"
+
+db-down: ## Остановить PostgreSQL
+	@echo "$(GREEN)Остановка PostgreSQL...$(NC)"
+	docker-compose -f docker-compose.dev.yml down
+
+db-logs: ## Просмотр логов PostgreSQL
+	docker-compose -f docker-compose.dev.yml logs -f postgres
+
+db-migrate: ## Применить миграции
+	@echo "$(GREEN)Применение миграций...$(NC)"
+	uv run alembic upgrade head
+	@echo "$(GREEN)Миграции применены$(NC)"
+
+db-rollback: ## Откатить последнюю миграцию
+	@echo "$(YELLOW)Откат последней миграции...$(NC)"
+	uv run alembic downgrade -1
+
+db-history: ## История миграций
+	uv run alembic history
+
+db-current: ## Текущая версия БД
+	uv run alembic current
+
+db-reset: ## Сбросить БД и накатить заново
+	@echo "$(YELLOW)ВНИМАНИЕ: Все данные будут удалены!$(NC)"
+	@read -p "Продолжить? [y/N] " -n 1 -r; \
+	echo; \
+	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
+		uv run alembic downgrade base; \
+		uv run alembic upgrade head; \
+		echo "$(GREEN)БД пересоздана$(NC)"; \
+	fi
+
+db-shell: ## Подключиться к psql
+	docker-compose -f docker-compose.dev.yml exec postgres psql -U llm_user -d llm_assistant
+
+db-revision: ## Создать новую миграцию (автогенерация)
+	@read -p "Название миграции: " name; \
+	uv run alembic revision --autogenerate -m "$$name"
+
+# === Combined команды ===
+
+db-init: db-up db-migrate ## Инициализация БД (запуск + миграции)
+	@echo "$(GREEN)БД инициализирована и готова к работе!$(NC)"
+
+db-restart: db-down db-up ## Перезапуск БД
+
+# === PgAdmin (опционально) ===
+
+pgadmin-up: ## Запустить PgAdmin
+	@echo "$(GREEN)Запуск PgAdmin...$(NC)"
+	docker-compose -f docker-compose.dev.yml --profile with-pgadmin up -d pgadmin
+	@echo "$(GREEN)PgAdmin доступен: http://localhost:5050$(NC)"
+	@echo "Email: admin@localhost.com, Password: admin"
+
+pgadmin-down: ## Остановить PgAdmin
+	docker-compose -f docker-compose.dev.yml --profile with-pgadmin stop pgadmin
 

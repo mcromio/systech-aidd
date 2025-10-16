@@ -1,8 +1,11 @@
 """Инструмент для поиска актуальной информации в интернете."""
 
 import logging
+from typing import Any
 
 from duckduckgo_search import DDGS
+
+from src.config import Config
 
 logger = logging.getLogger(__name__)
 
@@ -10,29 +13,85 @@ logger = logging.getLogger(__name__)
 class WebSearchTool:
     """Инструмент для поиска актуальной информации через DuckDuckGo."""
 
-    def __init__(self):
-        """Инициализация WebSearchTool."""
+    def __init__(self, config: Config) -> None:
+        """
+        Инициализация WebSearchTool.
+
+        Args:
+            config: Конфигурация приложения
+        """
+        self.config = config
         self.ddgs = DDGS()
         logger.info("WebSearchTool инициализирован")
 
-    async def search(self, query: str, max_results: int = 3) -> str:
+    def get_schema(self) -> dict[str, Any]:
+        """
+        Возвращает JSON схему для OpenAI function calling.
+
+        Returns:
+            Схема функции в формате OpenAI
+        """
+        return {
+            "type": "function",
+            "function": {
+                "name": "web_search",
+                "description": "Поиск АКТУАЛЬНОЙ информации в интернете через DuckDuckGo. Используй для вопросов о текущих событиях, политиках, новостях, ценах, погоде и т.д. НЕ используй для общеизвестных фактов из Wikipedia.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "Поисковый запрос (на русском или английском)",
+                        },
+                        "max_results": {
+                            "type": "integer",
+                            "description": f"Максимальное количество результатов (1-{self.config.websearch_max_results})",
+                            "default": self.config.websearch_default_results,
+                            "minimum": 1,
+                            "maximum": self.config.websearch_max_results,
+                        },
+                    },
+                    "required": ["query"],
+                },
+            },
+        }
+
+    async def execute(self, **kwargs: Any) -> str:
+        """
+        Выполняет инструмент с переданными аргументами.
+
+        Args:
+            **kwargs: query, max_results
+
+        Returns:
+            Результаты поиска
+        """
+        query = kwargs.get("query", "")
+        max_results = kwargs.get("max_results")
+        return await self.search(query, max_results)
+
+    async def search(self, query: str, max_results: int | None = None) -> str:
         """
         Поиск актуальной информации в интернете.
 
         Args:
             query: Поисковый запрос
-            max_results: Максимальное количество результатов (1-5)
+            max_results: Максимальное количество результатов (опционально)
 
         Returns:
             Структурированные результаты поиска с заголовками, описаниями и ссылками
 
         Examples:
-            >>> tool = WebSearchTool()
+            >>> tool = WebSearchTool(config)
             >>> result = await tool.search("президент Зимбабве 2025", max_results=2)
         """
         try:
+            # Используем дефолтное значение из config если не передано
+            if max_results is None:
+                max_results = self.config.websearch_default_results
+
             # Ограничиваем количество результатов
-            max_results = max(1, min(max_results, 5))
+            max_results = max(1, min(max_results, self.config.websearch_max_results))
 
             logger.info(f"Поиск в DuckDuckGo: '{query}' (max_results={max_results})")
 
@@ -51,8 +110,9 @@ class WebSearchTool:
                     results.append(f"{idx}. **{title}**")
                     if body:
                         # Обрезаем описание если слишком длинное
-                        if len(body) > 200:
-                            body = body[:197] + "..."
+                        max_length = self.config.websearch_max_body_length
+                        if len(body) > max_length:
+                            body = body[: max_length - 3] + "..."
                         results.append(f"   {body}")
                     if href:
                         results.append(f"   🔗 {href}")

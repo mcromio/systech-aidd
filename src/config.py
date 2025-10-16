@@ -32,6 +32,74 @@ class Config(BaseSettings):
         description="Таймаут для запросов к OpenAI (секунды)",
     )
 
+    # LLM параметры
+    llm_max_tool_iterations: int = Field(
+        default=10,
+        ge=1,
+        le=20,
+        description="Максимум итераций tool calls",
+    )
+    llm_max_websearch_calls: int = Field(
+        default=2,
+        ge=1,
+        le=5,
+        description="Максимум веб-запросов за диалог",
+    )
+    llm_max_tokens_with_tools: int = Field(
+        default=10000,
+        ge=1000,
+        description="Максимум токенов ответа с tools",
+    )
+    llm_max_tokens_no_tools: int = Field(
+        default=12000,
+        ge=1000,
+        description="Максимум токенов ответа без tools",
+    )
+
+    # WebSearch параметры
+    websearch_default_results: int = Field(
+        default=3,
+        ge=1,
+        le=10,
+        description="Дефолтное количество результатов поиска",
+    )
+    websearch_max_results: int = Field(
+        default=5,
+        ge=1,
+        le=10,
+        description="Максимум результатов поиска",
+    )
+    websearch_max_body_length: int = Field(
+        default=200,
+        ge=50,
+        description="Максимальная длина описания результата",
+    )
+
+    # Wikipedia параметры
+    wikipedia_max_summary_length: int = Field(
+        default=500,
+        ge=100,
+        description="Максимальная длина summary",
+    )
+    wikipedia_user_agent: str = Field(
+        default="LLM-Assistant-Bot/1.0",
+        description="User agent для Wikipedia API",
+    )
+
+    # Роль бота (TDD: Iteration 7)
+    system_prompt_file: str = Field(
+        default="prompts/default.txt",
+        description="Путь к файлу с системным промптом",
+    )
+    role_name: str = Field(
+        default="AI Assistant",
+        description="Название роли бота",
+    )
+    role_description: str = Field(
+        default="Универсальный ИИ-ассистент",
+        description="Краткое описание роли",
+    )
+
     # Поведение
     system_prompt: str = Field(
         default=(
@@ -56,6 +124,22 @@ class Config(BaseSettings):
         description="Максимум сообщений в истории",
     )
 
+    # Database Configuration (S1: Persistent Storage)
+    database_url: str = Field(
+        default="postgresql+asyncpg://llm_user:llm_password_dev@localhost:5432/llm_assistant",
+        description="PostgreSQL connection URL",
+    )
+    database_pool_size: int = Field(
+        default=5,
+        ge=1,
+        le=50,
+        description="Размер connection pool",
+    )
+    database_echo: bool = Field(
+        default=False,
+        description="Логировать SQL запросы (для отладки)",
+    )
+
     # Логирование
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = Field(
         default="INFO",
@@ -70,7 +154,7 @@ class Config(BaseSettings):
         env_ignore_empty=True,
     )
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: object) -> None:
         """Инициализация с приоритетом .env над системными переменными."""
         # Читаем .env файл напрямую и переопределяем ТОЛЬКО если
         # переменная из системного окружения ОТЛИЧАЕТСЯ от .env
@@ -90,9 +174,18 @@ class Config(BaseSettings):
                         logger.debug(
                             f"Переопределение {key} из .env (было в системе другое значение)"
                         )
-                        os.environ[key] = env_vars[key]
+                        os.environ[key] = env_vars[key]  # type: ignore[assignment]
 
-        super().__init__(**kwargs)
+        super().__init__(**kwargs)  # type: ignore[arg-type]
+
+    def model_post_init(self, __context: object) -> None:
+        """Загрузка системного промпта из файла после инициализации (TDD: Iteration 7)."""
+        prompt_path = Path(self.system_prompt_file)
+        if prompt_path.exists():
+            self.system_prompt = prompt_path.read_text(encoding="utf-8")
+            logger.info(f"Системный промпт загружен из файла: {self.system_prompt_file}")
+        else:
+            raise FileNotFoundError(f"System prompt file not found: {self.system_prompt_file}")
 
     def validate_config(self) -> None:
         """Валидация конфигурации при старте."""

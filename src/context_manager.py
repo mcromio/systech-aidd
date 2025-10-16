@@ -4,72 +4,83 @@ import logging
 from typing import Literal
 
 from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from src.config import Config
+from src.db.repositories import MessageRepository, UserRepository
+from src.db.session import get_session
 
 logger = logging.getLogger(__name__)
 
 
 class Message(BaseModel):
-    """Сообщение в диалоге."""
+    """
+    Сообщение в диалоге (Pydantic модель для обратной совместимости).
+
+    Используется для передачи сообщений между компонентами.
+    """
 
     role: Literal["user", "assistant", "system"]
     content: str
 
 
-class UserContext(BaseModel):
-    """Контекст диалога пользователя."""
-
-    user_id: int
-    messages: list[Message] = []
-
-    def add_message(self, role: str, content: str) -> None:
-        """Добавить сообщение в историю."""
-        self.messages.append(Message(role=role, content=content))
-
-    def get_messages(self, limit: int) -> list[Message]:
-        """Получить последние N сообщений."""
-        return self.messages[-limit:] if limit > 0 else self.messages
-
-    def clear(self) -> None:
-        """Очистить историю."""
-        self.messages = []
-
-
 class ContextManager:
-    """Менеджер контекста диалогов."""
+    """
+    Менеджер контекста диалогов с персистентным хранилищем.
 
-    def __init__(self, config: Config):
+    S1: Заменили in-memory хранилище на PostgreSQL через репозитории.
+    API остался без изменений для обратной совместимости.
+    """
+
+    def __init__(self, config: Config, session_factory: async_sessionmaker):
         """
         Инициализация менеджера контекста.
 
         Args:
             config: Конфигурация приложения
+            session_factory: Фабрика сессий SQLAlchemy
         """
         self.config = config
-        self.contexts: dict[int, UserContext] = {}
-        logger.info("ContextManager инициализирован")
+        self.session_factory = session_factory
+        logger.info("ContextManager инициализирован (с БД)")
 
-    def add_message(self, user_id: int, role: str, content: str) -> None:
+    async def add_message(
+        self, user_id: int, role: Literal["user", "assistant", "system"], content: str
+    ) -> None:
         """
         Добавить сообщение в историю пользователя.
 
+        S1: Сохраняет в БД вместо in-memory dict.
+
         Args:
             user_id: ID пользователя Telegram
-            role: Роль отправителя (user/assistant)
+            role: Роль отправителя (user/assistant/system)
             content: Содержимое сообщения
         """
-        if user_id not in self.contexts:
-            self.contexts[user_id] = UserContext(user_id=user_id)
-            logger.info(f"Создан новый контекст для пользователя {user_id}")
+        async with get_session(self.session_factory) as session:
+            user_repo = UserRepository(session)
+            message_repo = MessageRepository(session)
 
-        self.contexts[user_id].add_message(role, content)
-        self._trim_history(user_id)
-        logger.debug(f"Добавлено сообщение для пользователя {user_id}: {role}")
+            # Получить или создать пользователя
+            user, created = await user_repo.get_or_create_user(telegram_id=user_id)
 
-    def get_history(self, user_id: int) -> list[Message]:
+            if created:
+                logger.info(f"Создан новый пользователь: telegram_id={user_id}, db_id={user.id}")
+
+            # Создать сообщение
+            await message_repo.create_message(
+                user_id=user.id,  # Используем internal DB id
+                role=role,
+                content=content,
+            )
+
+            logger.debug(f"Добавлено сообщение для telegram_id={user_id}: {role}")
+
+    async def get_history(self, user_id: int) -> list[Message]:
         """
         Получить историю диалога пользователя.
+
+        S1: Читает из БД вместо in-memory dict.
 
         Args:
             user_id: ID пользователя Telegram
@@ -77,33 +88,56 @@ class ContextManager:
         Returns:
             Список сообщений (последние N)
         """
-        if user_id not in self.contexts:
-            logger.debug(f"История для пользователя {user_id} пуста")
-            return []
+        async with get_session(self.session_factory) as session:
+            user_repo = UserRepository(session)
+            message_repo = MessageRepository(session)
 
-        return self.contexts[user_id].get_messages(self.config.max_context_messages)
+            # Получить пользователя
+            user = await user_repo.get_by_telegram_id(user_id)
 
-    def clear_history(self, user_id: int) -> None:
+            if not user:
+                logger.debug(f"История для telegram_id={user_id} пуста (пользователь не найден)")
+                return []
+
+            # Получить историю сообщений
+            db_messages = await message_repo.get_user_history(
+                user_id=user.id,
+                limit=self.config.max_context_messages,
+            )
+
+            # Конвертировать в Pydantic модели для обратной совместимости
+            messages = [
+                Message(role=msg.role, content=msg.content)  # type: ignore[arg-type]
+                for msg in db_messages
+            ]
+
+            logger.debug(f"Получена история для telegram_id={user_id}: {len(messages)} сообщений")
+
+            return messages
+
+    async def clear_history(self, user_id: int) -> None:
         """
-        Очистить историю диалога пользователя.
+        Очистить историю диалога пользователя (soft delete).
+
+        S1: Soft delete в БД вместо очистки in-memory dict.
 
         Args:
             user_id: ID пользователя Telegram
         """
-        if user_id in self.contexts:
-            self.contexts[user_id].clear()
-            logger.info(f"История пользователя {user_id} очищена")
+        async with get_session(self.session_factory) as session:
+            user_repo = UserRepository(session)
+            message_repo = MessageRepository(session)
 
-    def _trim_history(self, user_id: int) -> None:
-        """
-        Обрезать историю до максимального размера.
+            # Получить пользователя
+            user = await user_repo.get_by_telegram_id(user_id)
 
-        Args:
-            user_id: ID пользователя Telegram
-        """
-        context = self.contexts[user_id]
-        max_messages = self.config.max_context_messages
+            if not user:
+                logger.debug(f"Нечего очищать для telegram_id={user_id} (пользователь не найден)")
+                return
 
-        if len(context.messages) > max_messages:
-            context.messages = context.messages[-max_messages:]
-            logger.debug(f"История пользователя {user_id} обрезана до {max_messages}")
+            # Soft delete всех сообщений
+            deleted_count = await message_repo.soft_delete_user_messages(user_id=user.id)
+
+            logger.info(
+                f"История telegram_id={user_id} очищена (soft delete): {deleted_count} сообщений"
+            )

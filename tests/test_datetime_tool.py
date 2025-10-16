@@ -1,6 +1,6 @@
 """Тесты для DateTimeTool."""
 
-from src.datetime_tool import DateTimeTool
+from src.tools import DateTimeTool
 
 
 def test_datetime_tool_init():
@@ -36,8 +36,9 @@ def test_get_current_datetime_date_only():
 
     # Assert
     assert result is not None
-    assert "UTC" not in result  # Нет часового пояса в date формате
-    assert ":" not in result  # Нет времени
+    assert "🕐 Источник:" in result  # Есть строка источника
+    assert "UTC" in result  # Часовой пояс в строке источника
+    assert ":" not in result.split("\n")[0]  # Нет времени в первой строке (дата)
 
 
 def test_get_current_datetime_time_only():
@@ -72,9 +73,10 @@ def test_get_current_datetime_invalid_timezone():
     # Arrange
     tool = DateTimeTool()
 
-    # Act - должен вернуть UTC при ошибке
+    # Act - должен использовать переданный timezone (даже если неправильный)
     result = tool.get_current_datetime("Invalid/Timezone", "full")
 
     # Assert
     assert result is not None
-    assert "UTC" in result  # Фолбэк на UTC
+    assert "Invalid/Timezone" in result  # Использует переданный timezone
+    assert "🕐 Источник:" in result  # Есть строка источника
