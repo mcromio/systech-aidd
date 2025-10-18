@@ -51,7 +51,7 @@ async def main() -> None:
     setup_logging(config.log_level)
 
     logger.info("=== Запуск LLM-ассистента (S1: с БД) ===")
-    logger.info(f"Модель: {config.openai_model}")
+    logger.info(f"Модель: {config.llm_model}")
     logger.info(f"Макс. контекст: {config.max_context_messages}")
     logger.info(f"База данных: {config.database_url.split('@')[-1]}")  # Без credentials
 

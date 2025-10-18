@@ -29,21 +29,18 @@ class OpenAIClient:
         """
         self.config = config
 
-        # Создаем HTTP клиент с прокси (если указан)
-        http_client_kwargs: dict[str, Any] = {"timeout": config.openai_timeout}
-        if config.openai_proxy_url:
-            http_client_kwargs["proxy"] = config.openai_proxy_url
-        
-        http_client = httpx.AsyncClient(**http_client_kwargs)
+        # Создаем HTTP клиент
+        http_client = httpx.AsyncClient(timeout=config.llm_timeout)
 
         self.client = AsyncOpenAI(
-            api_key=config.openai_api_key,
+            api_key=config.llm_api_key,
+            base_url=config.llm_base_url,
             http_client=http_client,
         )
 
-        proxy_info = f"proxy={config.openai_proxy_url}" if config.openai_proxy_url else "без прокси"
         logger.info(
-            f"OpenAIClient инициализирован: модель={config.openai_model}, {proxy_info}"
+            f"OpenAIClient инициализирован: модель={config.llm_model}, "
+            f"base_url={config.llm_base_url}"
         )
 
     async def create_completion(
@@ -73,22 +70,22 @@ class OpenAIClient:
         )
 
         logger.debug(
-            f"create_completion: model={self.config.openai_model}, "
+            f"create_completion: model={self.config.llm_model}, "
             f"messages={len(messages)}, tools={len(tools) if tools else 0}, "
             f"max_tokens={max_tokens}"
         )
 
-        # Вызываем OpenAI API (с tools или без)
+        # Вызываем LLM API (с tools или без)
         if tools:
             return await self.client.chat.completions.create(
-                model=self.config.openai_model,
+                model=self.config.llm_model,
                 messages=messages,  # type: ignore[arg-type]
                 tools=tools,  # type: ignore[arg-type]
                 max_completion_tokens=max_tokens,
             )
         else:
             return await self.client.chat.completions.create(
-                model=self.config.openai_model,
+                model=self.config.llm_model,
                 messages=messages,  # type: ignore[arg-type]
                 max_completion_tokens=max_tokens,
             )

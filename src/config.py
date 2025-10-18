@@ -19,17 +19,20 @@ class Config(BaseSettings):
     # Telegram
     telegram_bot_token: str = Field(..., description="Токен Telegram бота")
 
-    # OpenAI
-    openai_api_key: str = Field(..., description="API ключ OpenAI")
-    openai_proxy_url: str | None = Field(default=None, description="URL прокси для OpenAI (опционально)")
-    openai_model: str = Field(
-        default="gpt-4o-mini",
-        description="Модель LLM",
+    # LLM API (OpenRouter/OpenAI)
+    llm_api_key: str = Field(..., description="API ключ (OpenRouter или OpenAI)")
+    llm_base_url: str = Field(
+        default="https://openrouter.ai/api/v1",
+        description="Base URL для LLM API",
     )
-    openai_timeout: float = Field(
+    llm_model: str = Field(
+        default="openai/gpt-4o-mini",
+        description="Модель LLM (для OpenRouter используйте формат: provider/model)",
+    )
+    llm_timeout: float = Field(
         default=60.0,
         ge=1.0,
-        description="Таймаут для запросов к OpenAI (секунды)",
+        description="Таймаут для запросов к LLM API (секунды)",
     )
 
     # LLM параметры
@@ -166,8 +169,8 @@ class Config(BaseSettings):
         env_path = PROJECT_ROOT / ".env"
         if env_path.exists() and not kwargs:  # Только если не передаются аргументы напрямую
             env_vars = dotenv_values(env_path)
-            # Переопределяем только проблемные ключи (OPENAI_API_KEY)
-            for key in ["OPENAI_API_KEY"]:
+            # Переопределяем только проблемные ключи (LLM_API_KEY)
+            for key in ["LLM_API_KEY"]:
                 if key in env_vars and env_vars[key]:
                     # Проверяем, что в системе другое значение (старый ключ)
                     if key in os.environ and os.environ[key] != env_vars[key]:
@@ -191,7 +194,7 @@ class Config(BaseSettings):
         """Валидация конфигурации при старте."""
         if not self.telegram_bot_token:
             raise ValueError("TELEGRAM_BOT_TOKEN обязателен")
-        if not self.openai_api_key:
-            raise ValueError("OPENAI_API_KEY обязателен")
+        if not self.llm_api_key:
+            raise ValueError("LLM_API_KEY обязателен")
 
         logger.info("Конфигурация успешно загружена и проверена")

@@ -43,7 +43,7 @@ class LLMClient:
         )
 
         logger.info(
-            f"LLMClient (фасад) инициализирован: модель={config.openai_model}, "
+            f"LLMClient (фасад) инициализирован: модель={config.llm_model}, "
             f"tools={len(self.tools)}"
         )
 
