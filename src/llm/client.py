@@ -29,8 +29,18 @@ class OpenAIClient:
         """
         self.config = config
 
-        # Создаем HTTP клиент
-        http_client = httpx.AsyncClient(timeout=config.llm_timeout)
+        # Создаем HTTP клиент с headers для OpenRouter
+        default_headers = {}
+        if "openrouter.ai" in config.llm_base_url:
+            default_headers = {
+                "HTTP-Referer": "https://github.com/systech-aidd",
+                "X-Title": "SYSTECH LLM Assistant",
+            }
+        
+        http_client = httpx.AsyncClient(
+            timeout=config.llm_timeout,
+            headers=default_headers,
+        )
 
         self.client = AsyncOpenAI(
             api_key=config.llm_api_key,
