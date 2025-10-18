@@ -29,20 +29,21 @@ class OpenAIClient:
         """
         self.config = config
 
-        # Создаем HTTP клиент с прокси
-        http_client = httpx.AsyncClient(
-            proxy=config.openai_proxy_url,
-            timeout=config.openai_timeout,
-        )
+        # Создаем HTTP клиент с прокси (если указан)
+        http_client_kwargs: dict[str, Any] = {"timeout": config.openai_timeout}
+        if config.openai_proxy_url:
+            http_client_kwargs["proxy"] = config.openai_proxy_url
+        
+        http_client = httpx.AsyncClient(**http_client_kwargs)
 
         self.client = AsyncOpenAI(
             api_key=config.openai_api_key,
             http_client=http_client,
         )
 
+        proxy_info = f"proxy={config.openai_proxy_url}" if config.openai_proxy_url else "без прокси"
         logger.info(
-            f"OpenAIClient инициализирован: модель={config.openai_model}, "
-            f"proxy={config.openai_proxy_url}"
+            f"OpenAIClient инициализирован: модель={config.openai_model}, {proxy_info}"
         )
 
     async def create_completion(

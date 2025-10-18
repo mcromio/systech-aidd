@@ -21,9 +21,9 @@ class Config(BaseSettings):
 
     # OpenAI
     openai_api_key: str = Field(..., description="API ключ OpenAI")
-    openai_proxy_url: str = Field(..., description="URL прокси для OpenAI")
+    openai_proxy_url: str | None = Field(default=None, description="URL прокси для OpenAI (опционально)")
     openai_model: str = Field(
-        default="gpt-4.1-mini",
+        default="gpt-4o-mini",
         description="Модель LLM",
     )
     openai_timeout: float = Field(
@@ -193,7 +193,5 @@ class Config(BaseSettings):
             raise ValueError("TELEGRAM_BOT_TOKEN обязателен")
         if not self.openai_api_key:
             raise ValueError("OPENAI_API_KEY обязателен")
-        if not self.openai_proxy_url:
-            raise ValueError("OPENAI_PROXY_URL обязателен")
 
         logger.info("Конфигурация успешно загружена и проверена")
