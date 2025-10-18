@@ -14,8 +14,7 @@ services:
       POSTGRES_HOST_AUTH_METHOD: scram-sha-256
       POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
 
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+    # PostgreSQL доступен только внутри Docker сети (без expose наружу)
 
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -43,6 +42,9 @@ services:
     environment:
       - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-llm_user}:${POSTGRES_PASSWORD:-llm_password_dev}@postgres:5432/${POSTGRES_DB:-llm_assistant}
 
+    volumes:
+      - ./prompts:/app/prompts:ro
+
     depends_on:
       postgres:
         condition: service_healthy
@@ -62,8 +64,11 @@ services:
     environment:
       - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-llm_user}:${POSTGRES_PASSWORD:-llm_password_dev}@postgres:5432/${POSTGRES_DB:-llm_assistant}
 
+    volumes:
+      - ./prompts:/app/prompts:ro
+
     ports:
-      - "8000:8000"
+      - "8003:8000"
 
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
@@ -85,11 +90,11 @@ services:
     restart: unless-stopped
 
     environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8000
-      - API_HOST=http://api:8000
+      - NEXT_PUBLIC_API_URL=http://localhost:8003
+      - API_HOST=http://api:8003
 
     ports:
-      - "3000:3000"
+      - "3003:3000"
 
     depends_on:
       api:

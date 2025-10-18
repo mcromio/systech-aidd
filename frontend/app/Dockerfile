@@ -23,6 +23,10 @@ RUN pnpm install --frozen-lockfile
 # Копирование всего кода
 COPY . .
 
+# Build argument для API URL (по умолчанию localhost)
+ARG NEXT_PUBLIC_API_URL=http://localhost:8003
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
 # Сборка Next.js приложения
 RUN pnpm build
 
