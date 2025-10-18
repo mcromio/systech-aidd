@@ -39,6 +39,7 @@ app.add_middleware(
         "http://localhost:5173",  # Vite dev server
         "http://localhost:5174",  # Vite alternative port
         "http://localhost:8080",  # Альтернативный порт
+        "http://89.223.67.136:3003",  # Production frontend
     ],
     allow_credentials=True,
     allow_methods=["*"],
