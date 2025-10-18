@@ -1,0 +1,49 @@
+# Dockerfile для FastAPI сервиса
+# Python 3.12 Alpine - минимальный образ для MVP
+
+FROM python:3.12-alpine
+
+# Метаданные
+LABEL maintainer="STSI Team"
+LABEL description="LLM Assistant FastAPI"
+
+# Установка системных зависимостей
+RUN apk add --no-cache \
+    curl \
+    gcc \
+    musl-dev \
+    postgresql-dev \
+    bash
+
+# Рабочая директория
+WORKDIR /app
+
+# Копирование всего кода приложения
+COPY . .
+
+# Установка Python зависимостей
+# Устанавливаем пакет (не editable для production)
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir .
+
+# Копирование и настройка entrypoint скрипта
+COPY entrypoint-api.sh /app/entrypoint-api.sh
+RUN chmod +x /app/entrypoint-api.sh
+
+# Переменные окружения по умолчанию
+ENV PYTHONUNBUFFERED=1
+ENV LOG_LEVEL=INFO
+
+# Порт API
+EXPOSE 8000
+
+# Healthcheck (проверка доступности API)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:8000/ || exit 1
+
+# Entrypoint для миграций
+ENTRYPOINT ["/app/entrypoint-api.sh"]
+
+# Запуск API сервера
+CMD ["uvicorn", "src.api_main:app", "--host", "0.0.0.0", "--port", "8000"]
+

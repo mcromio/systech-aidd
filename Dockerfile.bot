@@ -1,0 +1,38 @@
+# Dockerfile для Telegram Bot
+# Python 3.12 Alpine - минимальный образ для MVP
+
+FROM python:3.12-alpine
+
+# Метаданные
+LABEL maintainer="STSI Team"
+LABEL description="LLM Assistant Telegram Bot"
+
+# Установка системных зависимостей
+RUN apk add --no-cache \
+    curl \
+    gcc \
+    musl-dev \
+    postgresql-dev
+
+# Рабочая директория
+WORKDIR /app
+
+# Копирование всего кода приложения
+COPY . .
+
+# Установка Python зависимостей
+# Устанавливаем пакет (не editable для production)
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir .
+
+# Переменные окружения по умолчанию
+ENV PYTHONUNBUFFERED=1
+ENV LOG_LEVEL=INFO
+
+# Healthcheck (проверка что процесс жив)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD pgrep -f "python -m src.main" || exit 1
+
+# Запуск бота
+CMD ["python", "-m", "src.main"]
+

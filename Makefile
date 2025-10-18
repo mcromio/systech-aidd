@@ -128,3 +128,110 @@ pgadmin-up: ## Запустить PgAdmin
 pgadmin-down: ## Остановить PgAdmin
 	docker-compose -f docker-compose.dev.yml --profile with-pgadmin stop pgadmin
 
+# === Mock Stats API команды (FE-S1) ===
+
+api-run: ## Запустить Mock Stats API сервер
+	@echo "$(GREEN)Запуск Mock Stats API...$(NC)"
+	@echo "API будет доступен на: http://localhost:8000"
+	@echo "Swagger UI: http://localhost:8000/docs"
+	@echo "ReDoc: http://localhost:8000/redoc"
+	uv run python -m src.api_main
+
+api-test: ## Тестировать API endpoints (curl)
+	@echo "$(GREEN)Тестирование API endpoints...$(NC)"
+	@echo ""
+	@echo "$(YELLOW)1. Health check:$(NC)"
+	curl -s http://localhost:8000/health | python -m json.tool
+	@echo ""
+	@echo "$(YELLOW)2. Stats for day:$(NC)"
+	curl -s "http://localhost:8000/api/v1/stats?period=day" | python -m json.tool | head -20
+	@echo ""
+	@echo "$(YELLOW)3. Stats for week:$(NC)"
+	curl -s "http://localhost:8000/api/v1/stats?period=week" | python -m json.tool | head -20
+	@echo ""
+	@echo "$(YELLOW)4. Stats for month:$(NC)"
+	curl -s "http://localhost:8000/api/v1/stats?period=month" | python -m json.tool | head -20
+	@echo ""
+	@echo "$(GREEN)Все endpoints работают!$(NC)"
+
+api-docs: ## Открыть API документацию в браузере
+	@echo "$(GREEN)Открытие документации...$(NC)"
+	@echo "Swagger UI: http://localhost:8000/docs"
+	@echo "ReDoc: http://localhost:8000/redoc"
+	@python -m webbrowser -t "http://localhost:8000/docs"
+
+api-test-unit: ## Запустить unit-тесты для API модулей
+	@echo "$(GREEN)Запуск unit-тестов API...$(NC)"
+	uv run pytest tests/test_mock_stat_collector.py tests/test_api_stats.py -v
+
+api-coverage: ## Проверить покрытие тестами API модулей
+	@echo "$(GREEN)Проверка покрытия API модулей...$(NC)"
+	uv run pytest tests/test_mock_stat_collector.py tests/test_api_stats.py -v --cov=src/api --cov-report=term-missing --cov-report=html
+	@echo "$(GREEN)HTML отчет: htmlcov/index.html$(NC)"
+
+# === Frontend команды (FE-S2) ===
+
+fe-install: ## Установить frontend зависимости
+	@echo "$(GREEN)Установка frontend зависимостей...$(NC)"
+	cd frontend/app && pnpm install
+
+fe-dev: ## Запустить frontend dev сервер
+	@echo "$(GREEN)Запуск frontend dev сервера...$(NC)"
+	@echo "Frontend доступен: http://localhost:3000"
+	cd frontend/app && pnpm dev
+
+fe-build: ## Собрать frontend для production
+	@echo "$(GREEN)Сборка frontend...$(NC)"
+	cd frontend/app && pnpm build
+
+fe-start: ## Запустить production сервер frontend
+	@echo "$(GREEN)Запуск production frontend...$(NC)"
+	cd frontend/app && pnpm start
+
+fe-lint: ## Проверить frontend код линтером
+	@echo "$(GREEN)Проверка frontend кода...$(NC)"
+	cd frontend/app && pnpm lint
+
+fe-format: ## Форматировать frontend код
+	@echo "$(GREEN)Форматирование frontend кода...$(NC)"
+	cd frontend/app && pnpm format
+
+fe-type-check: ## Проверить TypeScript типы
+	@echo "$(GREEN)Проверка TypeScript типов...$(NC)"
+	cd frontend/app && pnpm type-check
+
+fe-quality: fe-lint fe-type-check ## Полная проверка качества frontend
+	@echo "$(GREEN)Frontend проверка пройдена!$(NC)"
+
+# === Docker Compose (D1: Build & Publish) ===
+
+compose-build: ## Локальная сборка и запуск всех сервисов
+	@echo "$(GREEN)Локальная сборка через docker-compose...$(NC)"
+	docker-compose up -d --build
+
+compose-up: ## Запуск сервисов (без rebuild)
+	@echo "$(GREEN)Запуск сервисов...$(NC)"
+	docker-compose up -d
+
+compose-pull: ## Pull образов из GitHub Container Registry
+	@echo "$(GREEN)Загрузка образов из ghcr.io...$(NC)"
+	docker-compose -f docker-compose.prod.yml pull
+
+compose-prod: compose-pull ## Запуск из registry образов (с автоматическим pull)
+	@echo "$(GREEN)Запуск из registry образов...$(NC)"
+	docker-compose -f docker-compose.prod.yml up -d
+	@echo "$(GREEN)Все сервисы запущены из registry!$(NC)"
+
+compose-down: ## Остановить все сервисы
+	@echo "$(YELLOW)Остановка сервисов...$(NC)"
+	docker-compose down 2>/dev/null || true
+	docker-compose -f docker-compose.prod.yml down 2>/dev/null || true
+
+compose-logs: ## Просмотр логов всех сервисов
+	@echo "$(GREEN)Логи сервисов:$(NC)"
+	docker-compose logs -f
+
+compose-ps: ## Статус всех сервисов
+	@echo "$(GREEN)Статус сервисов:$(NC)"
+	docker-compose ps
+

@@ -1,0 +1,77 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Environment files (ВАЖНО: секреты не должны попасть в образ!)
+.env
+.env.local
+.env.*.local
+.env.example
+
+# Documentation
+# README.md - НЕ исключаем, нужен для pyproject.toml
+docs/
+devops/
+
+# Frontend (не нужен для Bot/API)
+frontend/
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info
+dist/
+build/
+*.whl
+
+# Testing
+tests/
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.tox/
+.hypothesis/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Type checking
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pytype/
+
+# Linting
+.ruff_cache/
+
+# Virtual environments
+.venv
+venv/
+ENV/
+env/
+.uv/
+
+# Project specific
+logs/
+*.log
+temp/
+tmp/
+coverage.json
+
+# Node modules (если есть)
+node_modules/
+
+# ВАЖНО: alembic/ НЕ исключен - нужен для миграций в API!
+
