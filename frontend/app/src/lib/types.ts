@@ -2,24 +2,65 @@
 
 export type Period = "day" | "week" | "month";
 
-export interface StatsResponse {
-  period: Period;
+export interface ActivityDataPoint {
+  date: string;
+  messages: number;
+  users: number;
+}
+
+export interface DialogInfo {
+  dialog_id: number;
+  user_id: number;
+  username: string | null;
+  last_message_at: string;
+  message_count: number;
+  status?: string;
+}
+
+export interface UserActivity {
+  user_id: number;
+  username: string | null;
+  message_count: number;
+  percentage?: number;
+}
+
+export interface GeneralStats {
   total_messages: number;
   total_users: number;
   total_dialogs: number;
   active_users_count: number;
-  messages_by_date: Array<{
+  avg_dialog_length?: number;
+  total_messages_change?: number;
+  total_users_change?: number;
+  total_dialogs_change?: number;
+  active_users_change?: number;
+  avg_dialog_length_change?: number;
+}
+
+export interface StatsResponse {
+  period: Period;
+  generated_at: string;
+  general_stats: {
+    total_messages: number;
+    total_users: number;
+    total_dialogs: number;
+    active_users_count: number;
+  };
+  activity_chart: Array<{
     date: string;
-    count: number;
+    messages: number;
+    users: number;
   }>;
   top_users: Array<{
     user_id: number;
-    username: string;
+    username: string | null;
     message_count: number;
   }>;
-  dialogs_activity: Array<{
+  recent_dialogs: Array<{
     dialog_id: number;
+    user_id: number;
+    username: string | null;
+    last_message_at: string;
     message_count: number;
-    last_activity: string;
   }>;
 }

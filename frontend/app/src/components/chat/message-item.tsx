@@ -14,7 +14,7 @@ interface MessageItemProps {
  */
 export function ChatMessageItem({ message }: MessageItemProps) {
   const isAssistant = message.role === "assistant";
-  const timestamp = format(parseISO(message.timestamp), "HH:mm", { locale: ru });
+  const timestamp = format(parseISO(message.created_at), "HH:mm", { locale: ru });
 
   return (
     <div
@@ -31,7 +31,7 @@ export function ChatMessageItem({ message }: MessageItemProps) {
             : "bg-primary text-primary-foreground"
         )}
       >
-        <p className="text-sm whitespace-pre-wrap break-words">{message.text}</p>
+        <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
         <span className="text-xs opacity-70 mt-1 block">{timestamp}</span>
       </div>
     </div>

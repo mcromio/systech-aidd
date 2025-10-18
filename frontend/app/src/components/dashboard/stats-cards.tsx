@@ -21,7 +21,7 @@ export function StatsCards({ stats }: StatsCardsProps) {
     },
     {
       title: "Active Users",
-      value: stats.active_users.toLocaleString(),
+      value: stats.active_users_count.toLocaleString(),
       change: stats.active_users_change,
     },
     {
@@ -31,7 +31,7 @@ export function StatsCards({ stats }: StatsCardsProps) {
     },
     {
       title: "Avg Dialog Length",
-      value: stats.avg_dialog_length.toFixed(1),
+      value: stats.avg_dialog_length?.toFixed(1) || "0.0",
       change: stats.avg_dialog_length_change,
     },
   ];
@@ -46,13 +46,15 @@ export function StatsCards({ stats }: StatsCardsProps) {
           <h3 className="text-sm font-medium text-gray-600 mb-2">{card.title}</h3>
           <div className="flex items-end justify-between">
             <p className="text-2xl font-bold text-gray-900">{card.value}</p>
-            <span
-              className={`text-sm font-semibold ${
-                card.change >= 0 ? "text-green-600" : "text-red-600"
-              }`}
-            >
-              {formatChange(card.change)}
-            </span>
+            {card.change != null && (
+              <span
+                className={`text-sm font-semibold ${
+                  card.change >= 0 ? "text-green-600" : "text-red-600"
+                }`}
+              >
+                {formatChange(card.change)}
+              </span>
+            )}
           </div>
         </div>
       ))}

@@ -21,9 +21,11 @@ export const chatApiClient = {
     return response.json();
   },
 
-  async sendMessage(userId: number, dialogId: number, content: string) {
+  async sendMessage(userId: number, content: string) {
+    // Для упрощения отправляем в последний/новый диалог
+    // В реальности нужно либо передавать dialogId, либо создавать новый диалог
     const response = await fetch(
-      `${API_BASE_URL}/api/v1/users/${userId}/dialogs/${dialogId}/messages`,
+      `${API_BASE_URL}/api/v1/users/${userId}/messages`,
       {
         method: "POST",
         headers: {

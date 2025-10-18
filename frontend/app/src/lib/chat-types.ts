@@ -3,9 +3,13 @@
 export interface Dialog {
   id: number;
   user_id: number;
+  username?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
   created_at: string;
   updated_at: string;
   message_count?: number;
+  unread_count?: number;
   last_message?: string;
   last_activity?: string;
 }
