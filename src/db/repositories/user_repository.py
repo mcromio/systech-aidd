@@ -1,7 +1,7 @@
 """Репозиторий для работы с пользователями."""
 
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -68,10 +68,18 @@ class UserRepository(BaseRepository[User]):
         user = await self.get_by_telegram_id(telegram_id)
 
         if user:
+            # Обновляем профильные данные из Telegram
+            if username is not None:
+                user.username = username
+            if first_name is not None:
+                user.first_name = first_name
+            if last_name is not None:
+                user.last_name = last_name
+
             # Обновляем last_seen_at
             user.update_last_seen()
             await self.session.flush()
-            logger.debug(f"Пользователь {telegram_id} найден, обновлён last_seen_at")
+            logger.debug(f"Пользователь {telegram_id} обновлен")
             return user, False
 
         # Создаём нового пользователя
@@ -80,7 +88,7 @@ class UserRepository(BaseRepository[User]):
             username=username,
             first_name=first_name,
             last_name=last_name,
-            last_seen_at=datetime.utcnow(),
+            last_seen_at=datetime.now(UTC),
         )
         self.session.add(user)
         await self.session.flush()

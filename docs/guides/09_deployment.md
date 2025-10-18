@@ -408,3 +408,7 @@ make run
 **Vision (Docker):** [../vision.md](../vision.md) раздел 10
 
 
+
+
+
+

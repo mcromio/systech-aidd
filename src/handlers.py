@@ -1,6 +1,7 @@
 """Обработчики команд и сообщений Telegram бота."""
 
 import logging
+import re
 
 from aiogram import types
 
@@ -9,6 +10,85 @@ from src.context_manager import ContextManager
 from src.llm_client import LLMClient
 
 logger = logging.getLogger(__name__)
+
+
+async def fetch_url_content(url: str, max_length: int = 3000) -> str | None:
+    """
+    Получить содержимое URL с умным парсингом.
+
+    Args:
+        url: URL для загрузки
+        max_length: Максимальная длина контента
+
+    Returns:
+        Текстовое содержимое или None
+    """
+    try:
+        import httpx
+        from bs4 import BeautifulSoup
+
+        async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
+            response = await client.get(url)
+            if response.status_code == 200:
+                # Парсим HTML с BeautifulSoup
+                soup = BeautifulSoup(response.text, "html.parser")
+
+                # Удаляем скрипты и стили
+                for tag in soup(["script", "style"]):
+                    tag.decompose()
+
+                # Пытаемся получить основной контент
+                text_parts = []
+
+                # Ищем заголовок страницы
+                title = soup.find("title")
+                if title:
+                    text_parts.append(f"Заголовок: {title.get_text().strip()}")
+
+                # Ищем meta description
+                meta_desc = soup.find("meta", attrs={"name": "description"})
+                if meta_desc:
+                    desc = meta_desc.get("content", "").strip()
+                    if desc:
+                        text_parts.append(f"Описание: {desc}")
+
+                # Ищем основной контент в main, article, или content
+                main_content = soup.find(["main", "article", "div[class*='content']"])
+                if not main_content:
+                    main_content = soup.body if soup.body else soup
+
+                # Извлекаем текст
+                if main_content:
+                    paragraphs = main_content.find_all(["p", "h1", "h2", "h3", "li"])
+                    for para in paragraphs[:15]:  # Ограничиваем количество элементов
+                        text = para.get_text().strip()
+                        if text and len(text) > 20:  # Только значимые куски
+                            text_parts.append(text)
+
+                # Собираем результат
+                full_text = "\n".join(text_parts)
+                full_text = re.sub(r"\s+", " ", full_text).strip()
+
+                if full_text:
+                    return full_text[:max_length]
+
+    except Exception as e:
+        logger.warning(f"Не удалось загрузить URL {url}: {e}")
+    return None
+
+
+def extract_urls(text: str) -> list[str]:
+    """
+    Извлечь URL из текста.
+
+    Args:
+        text: Текст для анализа
+
+    Returns:
+        Список найденных URL
+    """
+    url_pattern = r"https?://[^\s]+"
+    return re.findall(url_pattern, text)
 
 
 class MessageHandler:
@@ -138,8 +218,34 @@ class MessageHandler:
         logger.info(f"Сообщение от пользователя {user_id}: {user_text[:50]}...")
 
         try:
-            # Добавляем сообщение пользователя в контекст
-            await self.context_manager.add_message(user_id, "user", user_text)
+            # Проверяем наличие URL в сообщении
+            urls = extract_urls(user_text)
+            enriched_text = user_text
+
+            if urls:
+                logger.info(f"Найдены URL: {urls}")
+                url_contents = []
+
+                for url in urls:
+                    content = await fetch_url_content(url)
+                    if content:
+                        url_contents.append(f"[Содержимое из {url}]:\n{content}")
+                        logger.info(f"Успешно загружено содержимое из {url}")
+
+                if url_contents:
+                    enriched_text = (
+                        f"{user_text}\n\n📄 Информация со ссылок:\n{chr(10).join(url_contents)}"
+                    )
+
+            # Добавляем сообщение пользователя в контекст (с обогащенным текстом)
+            await self.context_manager.add_message(
+                user_id,
+                "user",
+                enriched_text,
+                username=message.from_user.username,
+                first_name=message.from_user.first_name,
+                last_name=message.from_user.last_name,
+            )
 
             # Получаем историю диалога
             history = await self.context_manager.get_history(user_id)

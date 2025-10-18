@@ -472,3 +472,7 @@ msg = Message.model_validate_json(json_str)
 **Детали:** [../vision.md](../vision.md) раздел 5
 
 
+
+
+
+

@@ -1,7 +1,7 @@
 """SQLAlchemy модели для БД."""
 
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import (
     BigInteger,
@@ -92,7 +92,7 @@ class User(Base):
 
     def update_last_seen(self) -> None:
         """Обновить время последней активности."""
-        self.last_seen_at = datetime.utcnow()
+        self.last_seen_at = datetime.now(UTC)
 
 
 class Message(Base):
@@ -186,7 +186,7 @@ class Message(Base):
         Устанавливает is_deleted=True и deleted_at=NOW().
         """
         self.is_deleted = True
-        self.deleted_at = datetime.utcnow()
+        self.deleted_at = datetime.now(UTC)
         logger.debug(f"Сообщение {self.id} помечено как удаленное")
 
     def restore(self) -> None:

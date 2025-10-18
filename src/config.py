@@ -23,11 +23,11 @@ class Config(BaseSettings):
     openai_api_key: str = Field(..., description="API ключ OpenAI")
     openai_proxy_url: str = Field(..., description="URL прокси для OpenAI")
     openai_model: str = Field(
-        default="gpt-4o-mini",
+        default="gpt-4.1-mini",
         description="Модель LLM",
     )
     openai_timeout: float = Field(
-        default=30.0,
+        default=60.0,
         ge=1.0,
         description="Таймаут для запросов к OpenAI (секунды)",
     )
@@ -88,8 +88,8 @@ class Config(BaseSettings):
 
     # Роль бота (TDD: Iteration 7)
     system_prompt_file: str = Field(
-        default="prompts/default.txt",
-        description="Путь к файлу с системным промптом",
+        default=str(PROJECT_ROOT / "prompts" / "default.txt"),
+        description="Путь к файлу системного промпта",
     )
     role_name: str = Field(
         default="AI Assistant",

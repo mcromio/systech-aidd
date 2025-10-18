@@ -542,3 +542,7 @@ python -c "from src.config import Config; Config()"
 **Не нашли решение?** Проверьте логи, они подскажут! 🔍
 
 
+
+
+
+

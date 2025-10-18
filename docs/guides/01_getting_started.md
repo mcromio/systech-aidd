@@ -259,3 +259,6 @@ make clean         # Очистить кэш
 **Следующий шаг:** [05_codebase_tour.md](05_codebase_tour.md) - изучите структуру кода
 
 
+
+
+

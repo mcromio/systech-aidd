@@ -8,7 +8,7 @@
 |--------|---------|--------|------|
 | [D0](#спринт-d0-basic-docker-setup) | Basic Docker Setup | ✅ Completed | [План D0](plans/d0-basic-docker-setup.md) |
 | [D1](#спринт-d1-build--publish) | Build & Publish | ✅ Completed | [План D1](plans/d1-build-publish.md) |
-| [D2](#спринт-d2-развертывание-на-сервер) | Развертывание на сервер | ⏳ Pending | - |
+| [D2](#спринт-d2-развертывание-на-сервер) | Развертывание на сервер | ✅ Completed | [План D2](plans/d2-manual-deploy.md) |
 | [D3](#спринт-d3-auto-deploy) | Auto Deploy | ⏳ Pending | - |
 
 ---

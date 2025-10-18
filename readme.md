@@ -45,9 +45,95 @@
 - **SQLAlchemy 2.0** - async ORM
 - **Alembic** - миграции БД
 - **uv** - управление зависимостями
-- **Docker** - контейнеризация БД
+- **Docker** - контейнеризация
+- **GitHub Actions** - CI/CD
 
-## Быстрый старт
+## 🚀 CI/CD Status
+
+[![Build and Push Docker Images](https://github.com/mcromio/systech-aidd/actions/workflows/build.yml/badge.svg)](https://github.com/mcromio/systech-aidd/actions/workflows/build.yml)
+
+Docker образы автоматически собираются и публикуются в GitHub Container Registry при каждом push в `main` или `devops` ветки.
+
+**Доступные образы:**
+- `ghcr.io/mcromio/systech-aidd-bot:latest` - Telegram бот
+- `ghcr.io/mcromio/systech-aidd-api:latest` - FastAPI backend
+- `ghcr.io/mcromio/systech-aidd-frontend:latest` - Next.js веб-интерфейс
+
+## 🚀 Быстрый старт
+
+### Вариант 1: Docker Compose с готовыми образами (Самый быстрый)
+
+Самый простой способ запустить все сервисы одной командой через Docker Compose.
+
+### Шаг 1: Настройка переменных окружения
+
+```bash
+# Скопировать шаблон
+cp .env.example .env
+
+# Отредактировать .env файл - заполнить обязательные переменные:
+# - OPENAI_API_KEY (получить на https://platform.openai.com/api-keys)
+# - TELEGRAM_BOT_TOKEN (получить через @BotFather в Telegram)
+```
+
+### Шаг 2: Запуск из готовых образов (ghcr.io)
+
+Использовать уже собранные образы из GitHub Container Registry:
+
+```bash
+# Pull и запуск через Makefile (рекомендуется)
+make compose-prod
+
+# Или вручную
+docker-compose -f docker-compose.prod.yml pull
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+**Преимущества:**
+- ✅ Быстрее - не нужно собирать образы локально
+- ✅ Всегда актуальная версия из main ветки
+- ✅ Работает на любой платформе
+
+---
+
+### Вариант 2: Docker Compose с локальной сборкой
+
+Если нужно собрать образы локально:
+
+```bash
+# Собрать и запустить все сервисы через Makefile
+make compose-build
+
+# Или вручную
+docker-compose up --build
+
+# Или в фоновом режиме
+docker-compose up -d --build
+```
+
+### Шаг 3: Проверка работоспособности
+
+После запуска будут доступны:
+- **Frontend**: http://localhost:3000 - веб-интерфейс
+- **API**: http://localhost:8000 - REST API (Swagger: http://localhost:8000/docs)
+- **PostgreSQL**: localhost:5432 - база данных
+- **Bot**: работает в фоне (логи видны в консоли)
+
+### Остановка сервисов
+
+```bash
+# Остановить все сервисы
+docker-compose down
+
+# Остановить и удалить volumes (ОСТОРОЖНО: удалит данные БД!)
+docker-compose down -v
+```
+
+---
+
+## Альтернативный способ: Локальная разработка (без Docker)
+
+Для разработки с локальным Python окружением.
 
 ### 1. Установка зависимостей
 
@@ -116,6 +202,18 @@ make lint           # Проверить код
 make format         # Отформатировать код
 make type-check     # Проверка типов (mypy)
 make clean          # Очистить временные файлы
+```
+
+### Docker Compose (D1)
+
+```bash
+make compose-build    # Локальная сборка и запуск
+make compose-prod     # Запуск из registry образов
+make compose-pull     # Pull образов из ghcr.io
+make compose-up       # Запуск без rebuild
+make compose-down     # Остановить сервисы
+make compose-logs     # Просмотр логов
+make compose-ps       # Статус сервисов
 ```
 
 ### База данных

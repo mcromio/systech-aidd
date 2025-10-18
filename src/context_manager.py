@@ -45,7 +45,13 @@ class ContextManager:
         logger.info("ContextManager инициализирован (с БД)")
 
     async def add_message(
-        self, user_id: int, role: Literal["user", "assistant", "system"], content: str
+        self,
+        user_id: int,
+        role: Literal["user", "assistant", "system"],
+        content: str,
+        username: str | None = None,
+        first_name: str | None = None,
+        last_name: str | None = None,
     ) -> None:
         """
         Добавить сообщение в историю пользователя.
@@ -56,13 +62,21 @@ class ContextManager:
             user_id: ID пользователя Telegram
             role: Роль отправителя (user/assistant/system)
             content: Содержимое сообщения
+            username: Username пользователя из Telegram (опционально)
+            first_name: Имя пользователя из Telegram (опционально)
+            last_name: Фамилия пользователя из Telegram (опционально)
         """
         async with get_session(self.session_factory) as session:
             user_repo = UserRepository(session)
             message_repo = MessageRepository(session)
 
             # Получить или создать пользователя
-            user, created = await user_repo.get_or_create_user(telegram_id=user_id)
+            user, created = await user_repo.get_or_create_user(
+                telegram_id=user_id,
+                username=username,
+                first_name=first_name,
+                last_name=last_name,
+            )
 
             if created:
                 logger.info(f"Создан новый пользователь: telegram_id={user_id}, db_id={user.id}")
