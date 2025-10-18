@@ -21,7 +21,7 @@ export function StatsCards({ stats }: StatsCardsProps) {
     },
     {
       title: "Active Users",
-      value: stats.active_users_count.toLocaleString(),
+      value: stats.active_users.toLocaleString(),
       change: stats.active_users_change,
     },
     {

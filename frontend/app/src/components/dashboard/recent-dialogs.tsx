@@ -1,9 +1,12 @@
 "use client";
 
-import type { DialogInfo } from "@/lib/types";
-
 interface RecentDialogsProps {
-  dialogs: DialogInfo[];
+  dialogs: Array<{
+    user_display: string;
+    message_count: number;
+    last_active: string;
+    status?: string;
+  }>;
 }
 
 export function RecentDialogs({ dialogs }: RecentDialogsProps) {
@@ -32,9 +35,9 @@ export function RecentDialogs({ dialogs }: RecentDialogsProps) {
           <tbody>
             {dialogs.map((dialog, idx) => (
               <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50">
-                <td className="py-3 px-4 text-gray-900 font-medium">{dialog.username || `User #${dialog.user_id}`}</td>
+                <td className="py-3 px-4 text-gray-900 font-medium">{dialog.user_display}</td>
                 <td className="py-3 px-4 text-gray-600">{dialog.message_count}</td>
-                <td className="py-3 px-4 text-gray-600">{new Date(dialog.last_message_at).toLocaleDateString()}</td>
+                <td className="py-3 px-4 text-gray-600">{dialog.last_active}</td>
                 <td className="py-3 px-4">
                   <span
                     className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${getStatusBadge(

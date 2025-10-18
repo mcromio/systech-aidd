@@ -1,9 +1,11 @@
 "use client";
 
-import type { UserActivity } from "@/lib/types";
-
 interface TopUsersProps {
-  users: UserActivity[];
+  users: Array<{
+    user_display: string;
+    message_count: number;
+    percentage?: number;
+  }>;
 }
 
 export function TopUsers({ users }: TopUsersProps) {
@@ -15,13 +17,13 @@ export function TopUsers({ users }: TopUsersProps) {
           <div key={idx} className="flex items-center gap-4">
             <div className="flex-1">
               <div className="flex items-center justify-between mb-1">
-                <p className="font-medium text-gray-900">{user.username || `User #${user.user_id}`}</p>
-                <span className="text-sm font-semibold text-gray-600">{user.percentage}%</span>
+                <p className="font-medium text-gray-900">{user.user_display}</p>
+                <span className="text-sm font-semibold text-gray-600">{user.percentage?.toFixed(1) || "0"}%</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div
                   className="bg-blue-500 h-2 rounded-full transition-all"
-                  style={{ width: `${user.percentage}%` }}
+                  style={{ width: `${user.percentage || 0}%` }}
                 ></div>
               </div>
               <p className="text-xs text-gray-500 mt-1">{user.message_count} messages</p>

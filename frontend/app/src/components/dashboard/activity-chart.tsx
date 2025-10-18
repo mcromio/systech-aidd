@@ -1,6 +1,6 @@
 "use client";
 
-import type { ActivityDataPoint, Period } from "@/lib/types";
+import type { Period } from "@/lib/types";
 import {
   LineChart,
   Line,
@@ -12,7 +12,7 @@ import {
 } from "recharts";
 
 interface ActivityChartProps {
-  data: ActivityDataPoint[];
+  data: Array<{ time: string; messages: number }>;
   period: Period;
 }
 
