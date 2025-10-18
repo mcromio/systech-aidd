@@ -14,11 +14,11 @@ export function DialogItem({ dialog, isSelected, onClick }: DialogItemProps) {
       : dialog.first_name || dialog.username || `User #${dialog.user_id}`;
 
   const lastMessagePreview = dialog.last_message
-    ? dialog.last_message.substring(0, 50) + (dialog.last_message.length > 50 ? "..." : "")
+    ? dialog.last_message.text.substring(0, 50) + (dialog.last_message.text.length > 50 ? "..." : "")
     : "Нет сообщений";
 
-  const lastMessageTime = dialog.last_activity
-    ? new Date(dialog.last_activity).toLocaleTimeString("ru-RU", {
+  const lastMessageTime = dialog.last_message
+    ? new Date(dialog.last_message.timestamp).toLocaleTimeString("ru-RU", {
         hour: "2-digit",
         minute: "2-digit",
       })
@@ -47,9 +47,9 @@ export function DialogItem({ dialog, isSelected, onClick }: DialogItemProps) {
           </p>
           <div className="flex items-center gap-2 mt-1">
             <span className="text-xs text-muted-foreground">
-              {dialog.message_count || 0} сообщений
+              {dialog.total_messages || 0} сообщений
             </span>
-            {dialog.unread_count != null && dialog.unread_count > 0 && (
+            {dialog.unread_count > 0 && (
               <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
                 {dialog.unread_count}
               </span>

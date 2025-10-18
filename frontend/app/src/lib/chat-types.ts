@@ -1,24 +1,24 @@
 // Типы для чата
 
+export interface LastMessage {
+  text: string;
+  timestamp: string;
+  role: string;
+}
+
 export interface Dialog {
-  id: number;
   user_id: number;
   username?: string | null;
   first_name?: string | null;
   last_name?: string | null;
-  created_at: string;
-  updated_at: string;
-  message_count?: number;
-  unread_count?: number;
-  last_message?: string;
-  last_activity?: string;
+  last_message: LastMessage | null;
+  unread_count: number;
+  total_messages: number;
 }
 
 export interface MessageItem {
   id: number;
-  dialog_id: number;
+  text: string;
   role: "user" | "assistant" | "system";
-  content: string;
-  created_at: string;
-  metadata?: Record<string, unknown>;
+  timestamp: string;
 }

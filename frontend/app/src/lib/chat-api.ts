@@ -3,17 +3,17 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export const chatApiClient = {
-  async getDialogs(userId: number) {
-    const response = await fetch(`${API_BASE_URL}/api/v1/users/${userId}/dialogs`);
+  async getDialogs() {
+    const response = await fetch(`${API_BASE_URL}/api/v1/chat/dialogs`);
     if (!response.ok) {
       throw new Error(`Failed to fetch dialogs: ${response.statusText}`);
     }
     return response.json();
   },
 
-  async getMessages(userId: number, dialogId: number) {
+  async getMessages(userId: number, limit: number = 50, offset: number = 0) {
     const response = await fetch(
-      `${API_BASE_URL}/api/v1/users/${userId}/dialogs/${dialogId}/messages`
+      `${API_BASE_URL}/api/v1/chat/dialogs/${userId}/messages?limit=${limit}&offset=${offset}`
     );
     if (!response.ok) {
       throw new Error(`Failed to fetch messages: ${response.statusText}`);
@@ -22,16 +22,14 @@ export const chatApiClient = {
   },
 
   async sendMessage(userId: number, content: string) {
-    // Для упрощения отправляем в последний/новый диалог
-    // В реальности нужно либо передавать dialogId, либо создавать новый диалог
     const response = await fetch(
-      `${API_BASE_URL}/api/v1/users/${userId}/messages`,
+      `${API_BASE_URL}/api/v1/chat/dialogs/${userId}/send`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({ text: content }),
       }
     );
     if (!response.ok) {

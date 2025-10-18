@@ -20,13 +20,13 @@ interface UseMessagesResult {
  * @param userId - ID пользователя Telegram
  * @returns Объект с сообщениями, состоянием загрузки, ошибкой и функцией перезагрузки
  */
-export function useMessages(userId: number | null, dialogId?: number): UseMessagesResult {
+export function useMessages(userId: number | null): UseMessagesResult {
   const [messages, setMessages] = useState<MessageItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
   const fetchMessages = useCallback(async () => {
-    if (userId === null || dialogId === undefined) {
+    if (userId === null) {
       setMessages([]);
       setLoading(false);
       return;
@@ -35,20 +35,20 @@ export function useMessages(userId: number | null, dialogId?: number): UseMessag
     setLoading(true);
     setError(null);
     try {
-      const response = await chatApiClient.getMessages(userId, dialogId);
+      const response = await chatApiClient.getMessages(userId);
       setMessages(response.messages);
     } catch (err) {
       setError(err as Error);
     } finally {
       setLoading(false);
     }
-  }, [userId, dialogId]);
+  }, [userId]);
 
   useEffect(() => {
     void fetchMessages();
 
     // Автообновление каждые 3 секунды для синхронизации с Telegram
-    if (userId !== null && dialogId !== undefined) {
+    if (userId !== null) {
       const interval = setInterval(() => {
         void fetchMessages();
       }, 3000);
@@ -58,7 +58,7 @@ export function useMessages(userId: number | null, dialogId?: number): UseMessag
 
     // Явный return undefined для TypeScript
     return undefined;
-  }, [fetchMessages, userId, dialogId]);
+  }, [fetchMessages, userId]);
 
   return { messages, loading, error, refetch: fetchMessages };
 }
