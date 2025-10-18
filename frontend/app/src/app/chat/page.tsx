@@ -9,7 +9,8 @@ import { MessageInput } from "@/components/chat/message-input";
 
 export default function ChatPage() {
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
-  const { dialogs, loading, error } = useDialogs();
+  // TODO: get actual userId from auth
+  const { dialogs, loading, error } = useDialogs(1);
   const {
     messages,
     loading: messagesLoading,

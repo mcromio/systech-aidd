@@ -11,7 +11,7 @@ interface UseDialogsResult {
   refetch: () => Promise<void>;
 }
 
-export function useDialogs(): UseDialogsResult {
+export function useDialogs(userId: number): UseDialogsResult {
   const [dialogs, setDialogs] = useState<Dialog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -20,7 +20,7 @@ export function useDialogs(): UseDialogsResult {
     try {
       setLoading(true);
       setError(null);
-      const response = await chatApiClient.getDialogs();
+      const response = await chatApiClient.getDialogs(userId);
       setDialogs(response.dialogs);
     } catch (err) {
       setError(
@@ -29,7 +29,7 @@ export function useDialogs(): UseDialogsResult {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     void fetchDialogs();
